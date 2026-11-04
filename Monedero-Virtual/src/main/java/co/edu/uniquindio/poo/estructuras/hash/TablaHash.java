@@ -98,7 +98,7 @@ public class TablaHash<K, V> {
     public ListaEnlazada<K> claves() {
         ListaEnlazada<K> lista = new ListaEnlazada<>();
         for (Entrada<K, V> cubeta : cubetas) {
-            for (Entrada<K, V> e = cubeta; e != null; e = e.siguiente) lista.agregarAlFinal(e.clave);
+            for (Entrada<K, V> e = cubeta; e != null; e = e.siguiente) lista.agregarFinal(e.clave);
         }
         return lista;
     }
@@ -106,7 +106,7 @@ public class TablaHash<K, V> {
     public ListaEnlazada<V> valores() {
         ListaEnlazada<V> lista = new ListaEnlazada<>();
         for (Entrada<K, V> cubeta : cubetas) {
-            for (Entrada<K, V> e = cubeta; e != null; e = e.siguiente) lista.agregarAlFinal(e.valor);
+            for (Entrada<K, V> e = cubeta; e != null; e = e.siguiente) lista.agregarFinal(e.valor);
         }
         return lista;
     }
