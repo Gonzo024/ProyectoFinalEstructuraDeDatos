@@ -84,6 +84,10 @@ public class Transaccion {
         this.fechaReversion = fecha;
     }
 
+    public void marcarFallida() {
+        this.estado = EstadoTransaccion.FALLIDA;
+    }
+
     public boolean estaCompletada() {
         return estado == EstadoTransaccion.COMPLETADA;
     }

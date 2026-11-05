@@ -2,7 +2,8 @@ package co.edu.uniquindio.poo.modelo.enums;
 
 public enum EstadoTransaccion {
     COMPLETADA("Completada"),
-    REVERTIDA("Revertida");
+    REVERTIDA("Revertida"),
+    FALLIDA("Fallida");
 
     private final String nombre;
 

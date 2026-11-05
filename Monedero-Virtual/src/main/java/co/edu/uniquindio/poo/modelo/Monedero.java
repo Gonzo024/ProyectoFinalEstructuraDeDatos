@@ -1,7 +1,7 @@
 package co.edu.uniquindio.poo.modelo;
 
-
-
+import co.edu.uniquindio.poo.estructuras.lista.ListaEnlazada;
+import co.edu.uniquindio.poo.estructuras.pila.Pila;
 import co.edu.uniquindio.poo.excepciones.SaldoInsuficienteException;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
 import co.edu.uniquindio.poo.util.Dinero;
@@ -11,6 +11,7 @@ import java.util.Objects;
 /**
  * Un monedero dentro de la cuenta de un cliente (principal, ahorros, gastos diarios...).
  * Solo los servicios deben modificar el saldo (acreditar/debitar).
+ * Guarda su historial (lista enlazada) y la pila de operaciones reversibles.
  */
 public class Monedero {
 
@@ -19,6 +20,8 @@ public class Monedero {
     private String nombre;
     private final TipoMonedero tipo;
     private double saldo;
+    private final ListaEnlazada<Transaccion> historial = new ListaEnlazada<Transaccion>();
+    private final Pila<Transaccion> reversibles = new Pila<Transaccion>();
 
     public Monedero(String id, String clienteId, String nombre, TipoMonedero tipo) {
         this.id = id;
@@ -66,6 +69,14 @@ public class Monedero {
         return saldo;
     }
 
+    public ListaEnlazada<Transaccion> getHistorial() {
+        return historial;
+    }
+
+    public Pila<Transaccion> getReversibles() {
+        return reversibles;
+    }
+
     @Override
     public boolean equals(Object o) {
         return o instanceof Monedero m && m.id.equals(id);
@@ -81,4 +92,3 @@ public class Monedero {
         return nombre + " (" + tipo + ")";
     }
 }
-
