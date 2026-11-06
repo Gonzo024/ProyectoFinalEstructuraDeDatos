@@ -91,4 +91,38 @@ public class ProgramacionService {
     public int cantidadPendientes() {
         return pendientes.tamanio();
     }
+
+
+public boolean cancelarTransaccion(String id) {
+
+    if (id == null || id.isBlank()) {
+        return false;
+    }
+
+    ColaPrioridad<TransaccionProgramada> auxiliar =
+        new ColaPrioridad<>();
+
+    boolean encontrada = false;
+
+    while (!pendientes.estaVacia()) {
+
+        TransaccionProgramada actual =
+            pendientes.extraer();
+
+        if (actual.getId().equals(id)) {
+
+            actual.cancelar();
+            encontrada = true;
+
+        } else {
+
+            auxiliar.insertar(actual);
+        }
+    }
+
+    pendientes = auxiliar;
+
+    return encontrada;
+}
+
 }
