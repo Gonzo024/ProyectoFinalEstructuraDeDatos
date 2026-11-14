@@ -10,17 +10,14 @@
       style="-fx-background-color: #F4F6FA;">
 
     <padding>
-        <Insets top="25" right="25"
-                bottom="25" left="25"/>
+        <Insets top="25" right="25" bottom="25" left="25"/>
     </padding>
 
     <Label text="Monedero Virtual"
-           style="-fx-font-size: 26px;
-                  -fx-font-weight: bold;"/>
+           style="-fx-font-size: 26px; -fx-font-weight: bold;"/>
 
     <Label text="Programaciones, notificaciones y analisis de gastos"
-           style="-fx-font-size: 14px;
-                  -fx-text-fill: #666666;"/>
+           style="-fx-font-size: 14px; -fx-text-fill: #666666;"/>
 
     <TabPane tabClosingPolicy="UNAVAILABLE"
              VBox.vgrow="ALWAYS">
@@ -28,59 +25,120 @@
         <tabs>
 
             <!-- PROGRAMACIONES -->
-            <!-- La conectaremos en el siguiente commit. -->
 
             <Tab text="Programaciones">
 
-                <VBox spacing="15"
+                <VBox spacing="12"
                       style="-fx-padding: 20;">
 
                     <Label text="Transacciones programadas"
-                           style="-fx-font-size: 20px;
-                                  -fx-font-weight: bold;"/>
+                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
 
-                    <Label text="Programa operaciones para una fecha futura."/>
-
-                    <TextField promptText="ID del cliente"/>
-
-                    <TextField promptText="ID del monedero origen"/>
-
-                    <TextField promptText="Monto"/>
-
-                    <DatePicker promptText="Fecha de ejecucion"/>
-
-                    <ComboBox promptText="Frecuencia"/>
+                    <Label text="Registra operaciones futuras. No se mueve dinero hasta su ejecucion."/>
 
                     <HBox spacing="10">
 
-                        <Button text="Programar"/>
+                        <TextField fx:id="txtClienteProgramacion"
+                                   promptText="ID del cliente (C1)"
+                                   HBox.hgrow="ALWAYS"/>
 
-                        <Button text="Cancelar programacion"/>
+                        <TextField fx:id="txtMonederoProgramacion"
+                                   promptText="ID del monedero (M1)"
+                                   HBox.hgrow="ALWAYS"/>
 
                     </HBox>
 
-                    <TableView VBox.vgrow="ALWAYS">
+                    <HBox spacing="10">
+
+                        <ComboBox fx:id="comboTipo"
+                                  prefWidth="230"
+                                  promptText="Tipo de transaccion"/>
+
+                        <TextField fx:id="txtMontoProgramacion"
+                                   promptText="Monto"
+                                   HBox.hgrow="ALWAYS"/>
+
+                        <ComboBox fx:id="comboFrecuencia"
+                                  prefWidth="170"
+                                  promptText="Frecuencia"/>
+
+                    </HBox>
+
+                    <HBox spacing="10">
+
+                        <DatePicker fx:id="fechaProgramacion"
+                                    promptText="Fecha futura"/>
+
+                        <TextField fx:id="txtHoraProgramacion"
+                                   promptText="HH:mm"
+                                   prefWidth="100"/>
+
+                    </HBox>
+
+                    <Label text="Destino: obligatorio para transferencias"
+                           style="-fx-font-weight: bold;"/>
+
+                    <HBox spacing="10">
+
+                        <TextField fx:id="txtClienteDestino"
+                                   promptText="ID cliente destino"
+                                   HBox.hgrow="ALWAYS"/>
+
+                        <TextField fx:id="txtMonederoDestino"
+                                   promptText="ID monedero destino"
+                                   HBox.hgrow="ALWAYS"/>
+
+                    </HBox>
+
+                    <HBox spacing="10">
+
+                        <Button text="Programar"
+                                onAction="#crearProgramacion"/>
+
+                        <Button text="Cancelar seleccionada"
+                                onAction="#cancelarProgramacion"/>
+
+                        <Button text="Consultar siguiente"
+                                onAction="#consultarSiguienteProgramacion"/>
+
+                    </HBox>
+
+                    <Label fx:id="lblEstadoProgramaciones"
+                           text="Programaciones pendientes: 0"
+                           style="-fx-font-weight: bold;"/>
+
+                    <TableView fx:id="tablaProgramaciones"
+                               VBox.vgrow="ALWAYS">
 
                         <columns>
 
-                            <TableColumn text="ID"
-                                         prefWidth="100"/>
+                            <TableColumn fx:id="colProgId"
+                                         text="ID"
+                                         prefWidth="75"/>
 
-                            <TableColumn text="Tipo"
-                                         prefWidth="150"/>
+                            <TableColumn fx:id="colProgTipo"
+                                         text="Tipo"
+                                         prefWidth="170"/>
 
-                            <TableColumn text="Monto"
-                                         prefWidth="150"/>
+                            <TableColumn fx:id="colProgMonto"
+                                         text="Monto"
+                                         prefWidth="130"/>
 
-                            <TableColumn text="Fecha"
-                                         prefWidth="180"/>
+                            <TableColumn fx:id="colProgFecha"
+                                         text="Fecha y hora"
+                                         prefWidth="175"/>
 
-                            <TableColumn text="Frecuencia"
-                                         prefWidth="150"/>
+                            <TableColumn fx:id="colProgFrecuencia"
+                                         text="Frecuencia"
+                                         prefWidth="135"/>
 
                         </columns>
 
                     </TableView>
+
+                    <Label text="Los movimientos se almacenan en memoria. No se ejecutan transferencias ni pagos automaticamente."
+                           wrapText="true"
+                           style="-fx-font-size: 12px; -fx-text-fill: #777777;"/>
 
                 </VBox>
 
@@ -94,8 +152,7 @@
                       style="-fx-padding: 20;">
 
                     <Label text="Mis notificaciones"
-                           style="-fx-font-size: 20px;
-                                  -fx-font-weight: bold;"/>
+                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
 
                     <Label text="Consulta las notificaciones de un cliente."/>
 
@@ -156,8 +213,7 @@
                       style="-fx-padding: 20;">
 
                     <Label text="Reporte de gastos"
-                           style="-fx-font-size: 20px;
-                                  -fx-font-weight: bold;"/>
+                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
 
                     <Label text="Consulta los gastos de todos los monederos de un cliente."/>
 
@@ -189,8 +245,7 @@
 
                     <Label fx:id="lblTotalGastos"
                            text="Total gastado: $0.00"
-                           style="-fx-font-size: 22px;
-                                  -fx-font-weight: bold;"/>
+                           style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
 
                     <Label fx:id="lblCategoriaMayor"
                            text="Categoria con mayor gasto: Ninguna"
@@ -218,8 +273,7 @@
                     </TableView>
 
                     <Label text="Los datos de demostracion son temporales y no modifican saldos."
-                           style="-fx-font-size: 12px;
-                                  -fx-text-fill: #777777;"/>
+                           style="-fx-font-size: 12px; -fx-text-fill: #777777;"/>
 
                 </VBox>
 
