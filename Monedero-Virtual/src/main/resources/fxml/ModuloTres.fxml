@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="co.edu.uniquindio.poo.vista.ModuloTresController"
@@ -18,7 +18,7 @@
            style="-fx-font-size: 26px;
                   -fx-font-weight: bold;"/>
 
-    <Label text="Programaciones, notificaciones y análisis de gastos"
+    <Label text="Programaciones, notificaciones y analisis de gastos"
            style="-fx-font-size: 14px;
                   -fx-text-fill: #666666;"/>
 
@@ -27,7 +27,11 @@
 
         <tabs>
 
+            <!-- PROGRAMACIONES -->
+            <!-- La conectaremos en el siguiente commit. -->
+
             <Tab text="Programaciones">
+
                 <VBox spacing="15"
                       style="-fx-padding: 20;">
 
@@ -43,96 +47,111 @@
 
                     <TextField promptText="Monto"/>
 
-                    <DatePicker promptText="Fecha de ejecución"/>
+                    <DatePicker promptText="Fecha de ejecucion"/>
 
                     <ComboBox promptText="Frecuencia"/>
 
                     <HBox spacing="10">
+
                         <Button text="Programar"/>
-                        <Button text="Cancelar programación"/>
+
+                        <Button text="Cancelar programacion"/>
+
                     </HBox>
 
                     <TableView VBox.vgrow="ALWAYS">
+
                         <columns>
+
                             <TableColumn text="ID"
                                          prefWidth="100"/>
+
                             <TableColumn text="Tipo"
                                          prefWidth="150"/>
+
                             <TableColumn text="Monto"
                                          prefWidth="150"/>
+
                             <TableColumn text="Fecha"
                                          prefWidth="180"/>
+
                             <TableColumn text="Frecuencia"
                                          prefWidth="150"/>
+
                         </columns>
+
                     </TableView>
 
                 </VBox>
+
             </Tab>
 
-            
-<Tab text="Notificaciones">
+            <!-- NOTIFICACIONES -->
 
-    <VBox spacing="15"
-          style="-fx-padding: 20;">
+            <Tab text="Notificaciones">
 
-        <Label text="Mis notificaciones"
-               style="-fx-font-size: 20px;
-                      -fx-font-weight: bold;"/>
+                <VBox spacing="15"
+                      style="-fx-padding: 20;">
 
-        <Label text="Consulta las notificaciones de un cliente."/>
+                    <Label text="Mis notificaciones"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;"/>
 
-        <TextField fx:id="txtClienteNotificacion"
-                   promptText="ID del cliente, por ejemplo C1"/>
+                    <Label text="Consulta las notificaciones de un cliente."/>
 
-        <HBox spacing="10">
+                    <TextField fx:id="txtClienteNotificacion"
+                               promptText="ID del cliente, por ejemplo C1"/>
 
-            <Button text="Consultar"
-                    onAction="#consultarNotificaciones"/>
+                    <HBox spacing="10">
 
-            <Button text="Crear aviso de prueba"
-                    onAction="#crearNotificacionPrueba"/>
+                        <Button text="Consultar"
+                                onAction="#consultarNotificaciones"/>
 
-            <Button text="Marcar como leida"
-                    onAction="#marcarNotificacionLeida"/>
+                        <Button text="Crear aviso de prueba"
+                                onAction="#crearNotificacionPrueba"/>
 
-        </HBox>
+                        <Button text="Marcar como leida"
+                                onAction="#marcarNotificacionLeida"/>
 
-        <Label fx:id="lblCantidadNoLeidas"
-               text="Notificaciones sin leer: 0"
-               style="-fx-font-weight: bold;"/>
+                    </HBox>
 
-        <TableView fx:id="tablaNotificaciones"
-                   VBox.vgrow="ALWAYS">
+                    <Label fx:id="lblCantidadNoLeidas"
+                           text="Notificaciones sin leer: 0"
+                           style="-fx-font-weight: bold;"/>
 
-            <columns>
+                    <TableView fx:id="tablaNotificaciones"
+                               VBox.vgrow="ALWAYS">
 
-                <TableColumn fx:id="columnaId"
-                             text="ID"
-                             prefWidth="90"/>
+                        <columns>
 
-                <TableColumn fx:id="columnaTipo"
-                             text="Tipo"
-                             prefWidth="170"/>
+                            <TableColumn fx:id="columnaId"
+                                         text="ID"
+                                         prefWidth="90"/>
 
-                <TableColumn fx:id="columnaMensaje"
-                             text="Mensaje"
-                             prefWidth="350"/>
+                            <TableColumn fx:id="columnaTipo"
+                                         text="Tipo"
+                                         prefWidth="170"/>
 
-                <TableColumn fx:id="columnaLeida"
-                             text="Leida"
-                             prefWidth="100"/>
+                            <TableColumn fx:id="columnaMensaje"
+                                         text="Mensaje"
+                                         prefWidth="350"/>
 
-            </columns>
+                            <TableColumn fx:id="columnaLeida"
+                                         text="Leida"
+                                         prefWidth="100"/>
 
-        </TableView>
+                        </columns>
 
-    </VBox>
+                    </TableView>
 
-</Tab>
+                </VBox>
 
+            </Tab>
 
-            <Tab text="Análisis de gastos">
+            <!-- ANALISIS DE GASTOS -->
+
+            <Tab text="Analisis de gastos">
+
                 <VBox spacing="15"
                       style="-fx-padding: 20;">
 
@@ -140,31 +159,74 @@
                            style="-fx-font-size: 20px;
                                   -fx-font-weight: bold;"/>
 
-                    <TextField promptText="ID del cliente"/>
+                    <Label text="Consulta los gastos de todos los monederos de un cliente."/>
 
                     <HBox spacing="10">
-                        <TextField promptText="Año"/>
-                        <TextField promptText="Mes"/>
-                        <Button text="Consultar gastos"/>
+
+                        <TextField fx:id="txtClienteGastos"
+                                   promptText="ID del cliente"
+                                   HBox.hgrow="ALWAYS"/>
+
+                        <Button text="Cargar datos de demostracion"
+                                onAction="#cargarDatosDemostracion"/>
+
                     </HBox>
 
-                    <Label text="Total gastado: $0"
+                    <HBox spacing="10">
+
+                        <TextField fx:id="txtAnioGastos"
+                                   promptText="Año"
+                                   prefWidth="100"/>
+
+                        <TextField fx:id="txtMesGastos"
+                                   promptText="Mes"
+                                   prefWidth="80"/>
+
+                        <Button text="Consultar gastos"
+                                onAction="#consultarGastos"/>
+
+                    </HBox>
+
+                    <Label fx:id="lblTotalGastos"
+                           text="Total gastado: $0.00"
                            style="-fx-font-size: 22px;
                                   -fx-font-weight: bold;"/>
 
-                    <TableView VBox.vgrow="ALWAYS">
+                    <Label fx:id="lblCategoriaMayor"
+                           text="Categoria con mayor gasto: Ninguna"
+                           style="-fx-font-size: 15px;"/>
+
+                    <Label fx:id="lblEstadoGastos"
+                           text="Sin consulta"
+                           style="-fx-text-fill: #666666;"/>
+
+                    <TableView fx:id="tablaGastos"
+                               VBox.vgrow="ALWAYS">
+
                         <columns>
-                            <TableColumn text="Categoría"
+
+                            <TableColumn fx:id="columnaCategoriaGastos"
+                                         text="Categoria"
                                          prefWidth="300"/>
-                            <TableColumn text="Total"
-                                         prefWidth="200"/>
+
+                            <TableColumn fx:id="columnaTotalGastos"
+                                         text="Total gastado"
+                                         prefWidth="220"/>
+
                         </columns>
+
                     </TableView>
 
+                    <Label text="Los datos de demostracion son temporales y no modifican saldos."
+                           style="-fx-font-size: 12px;
+                                  -fx-text-fill: #777777;"/>
+
                 </VBox>
+
             </Tab>
 
         </tabs>
+
     </TabPane>
 
 </VBox>
