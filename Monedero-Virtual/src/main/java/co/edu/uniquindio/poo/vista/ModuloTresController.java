@@ -6,15 +6,19 @@ import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.Notificacion;
 import co.edu.uniquindio.poo.modelo.Transaccion;
 import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
+
 import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
 import co.edu.uniquindio.poo.modelo.enums.TipoNotificacion;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
+
 import co.edu.uniquindio.poo.servicios.ClienteService;
 import co.edu.uniquindio.poo.servicios.NotificacionService;
+import co.edu.uniquindio.poo.servicios.ProcesadorProgramacionesService;
 import co.edu.uniquindio.poo.servicios.ProgramacionService;
 import co.edu.uniquindio.poo.servicios.ProgramacionNotificacionService;
 import co.edu.uniquindio.poo.servicios.ReporteGastosClienteService;
+
 import co.edu.uniquindio.poo.util.Dinero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
 
@@ -23,6 +27,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,7 +52,6 @@ public class ModuloTresController {
     private final ProgramacionService programacionService =
             new ProgramacionService(reloj);
 
-    // Conecta programaciones con notificaciones.
     private final ProgramacionNotificacionService
             programacionNotificacionService =
             new ProgramacionNotificacionService(
@@ -57,6 +62,16 @@ public class ModuloTresController {
     private final ReporteGastosClienteService reporteService =
             new ReporteGastosClienteService(clienteService);
 
+    // DEMOSTRACION:
+    // El ejecutor devuelve false porque aun no existe
+    // un servicio que mueva dinero realmente.
+    private final ProcesadorProgramacionesService procesador =
+            new ProcesadorProgramacionesService(
+                    programacionService,
+                    notificacionService,
+                    programacion -> false
+            );
+
     private final ObservableList<TransaccionProgramada>
             programacionesVisibles =
             FXCollections.observableArrayList();
@@ -66,6 +81,8 @@ public class ModuloTresController {
 
     private final DateTimeFormatter formatoFecha =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    private Label lblRelojSimulado;
 
     // CAMPOS DE PROGRAMACIONES
 
@@ -105,6 +122,7 @@ public class ModuloTresController {
     @FXML private TextField txtClienteGastos;
     @FXML private TextField txtAnioGastos;
     @FXML private TextField txtMesGastos;
+
     @FXML private Label lblTotalGastos;
     @FXML private Label lblCategoriaMayor;
     @FXML private Label lblEstadoGastos;
@@ -134,6 +152,7 @@ public class ModuloTresController {
         fechaProgramacion.setValue(hoy.plusDays(1));
         txtHoraProgramacion.setText("10:00");
 
+        crearControlesSimulacion();
         actualizarEstadoProgramaciones();
     }
 
@@ -210,7 +229,6 @@ public class ModuloTresController {
                         "El monedero no pertenece al cliente");
             }
 
-            // Convertimos el monto y validamos errores.
             String textoMonto =
                     txtMontoProgramacion.getText()
                             .trim().replace(",", ".");
@@ -339,8 +357,6 @@ public class ModuloTresController {
                             frecuencia
                     );
 
-            // NUEVA INTEGRACION:
-            // Guarda en la cola y genera una notificacion.
             programacionNotificacionService.programarYNotificar(nueva);
 
             contadorProgramaciones++;
@@ -350,9 +366,6 @@ public class ModuloTresController {
                     TransaccionProgramada::compareTo);
 
             actualizarEstadoProgramaciones();
-
-            // Si estamos viendo avisos de este cliente,
-            // refrescamos su tabla tambien.
             actualizarNotificacionesSiCorresponde(clienteId);
 
             mostrarMensaje(
@@ -385,8 +398,6 @@ public class ModuloTresController {
             return;
         }
 
-        // NUEVA INTEGRACION:
-        // Cancela en el servicio y genera el aviso.
         boolean cancelada =
                 programacionNotificacionService.cancelarYNotificar(
                         seleccionada.getId());
@@ -435,11 +446,154 @@ public class ModuloTresController {
                                 .format(formatoFecha));
     }
 
+    // -------------------------------------------------
+    // SIMULACION DE VENCIMIENTOS - COMMIT 20
+    // -------------------------------------------------
+
+    private void crearControlesSimulacion() {
+
+        // Colocamos los nuevos botones encima de la tabla.
+        VBox panel = (VBox) tablaProgramaciones.getParent();
+
+        Label titulo = new Label(
+                "Prueba de vencimientos (sin dinero real)"
+        );
+
+        titulo.setStyle(
+                "-fx-font-weight: bold; -fx-font-size: 14px;"
+        );
+
+        lblRelojSimulado = new Label();
+
+        Button btnAvanzar = new Button(
+                "Avanzar al siguiente vencimiento"
+        );
+
+        Button btnProcesar = new Button(
+                "Procesar vencidas (prueba)"
+        );
+
+        btnAvanzar.setOnAction(evento ->
+                avanzarRelojAlSiguienteVencimiento());
+
+        btnProcesar.setOnAction(evento ->
+                procesarVencimientosDePrueba());
+
+        HBox botones = new HBox(
+                10,
+                btnAvanzar,
+                btnProcesar
+        );
+
+        Label advertencia = new Label(
+                "Prueba sin movimientos financieros. "
+                        + "Las operaciones se marcaran como no ejecutadas."
+        );
+
+        advertencia.setWrapText(true);
+        advertencia.setStyle(
+                "-fx-text-fill: #777777; -fx-font-size: 12px;"
+        );
+
+        int posicion =
+                panel.getChildren().indexOf(tablaProgramaciones);
+
+        panel.getChildren().add(posicion++, titulo);
+        panel.getChildren().add(posicion++, lblRelojSimulado);
+        panel.getChildren().add(posicion++, botones);
+        panel.getChildren().add(posicion, advertencia);
+
+        actualizarRelojVisual();
+    }
+
+    private void avanzarRelojAlSiguienteVencimiento() {
+
+        TransaccionProgramada siguiente =
+                programacionService.consultarSiguiente();
+
+        if (siguiente == null) {
+
+            mostrarMensaje(
+                    "Sin programaciones",
+                    "Primero debes crear una programacion."
+            );
+            return;
+        }
+
+        LocalDateTime fecha =
+                siguiente.getFechaProgramada();
+
+        // Solo avanzamos el reloj, nunca retrocedemos.
+        if (fecha.isAfter(reloj.ahora())) {
+            reloj.fijar(fecha);
+        }
+
+        actualizarRelojVisual();
+
+        mostrarMensaje(
+                "Reloj actualizado",
+                "El reloj simulado ahora marca "
+                        + reloj.ahora().format(formatoFecha)
+                        + ". Ya puedes procesar las vencidas."
+        );
+    }
+
+    private void procesarVencimientosDePrueba() {
+
+        if (!programacionService.hayTransaccionesVencidas()) {
+
+            mostrarMensaje(
+                    "Sin vencimientos",
+                    "No hay operaciones vencidas. "
+                            + "Puedes avanzar el reloj simulado."
+            );
+            return;
+        }
+
+        // El procesador usa un ejecutor que devuelve false:
+        // ninguna operacion de dinero se realiza realmente.
+        int procesadas = procesador.procesarVencidas();
+
+        // Al fallar, el procesador desactiva las programaciones.
+        programacionesVisibles.removeIf(
+                programacion -> !programacion.isActiva()
+        );
+
+        tablaProgramaciones.refresh();
+
+        actualizarEstadoProgramaciones();
+        actualizarRelojVisual();
+
+        String clienteConsultado =
+                txtClienteNotificacion.getText().trim();
+
+        if (!clienteConsultado.isEmpty()) {
+            actualizarTablaNotificaciones(clienteConsultado);
+        }
+
+        mostrarMensaje(
+                "Prueba completada",
+                "Se revisaron " + procesadas
+                        + " programaciones vencidas. "
+                        + "No se realizaron movimientos financieros. "
+                        + "Consulta Notificaciones para ver los avisos."
+        );
+    }
+
+    private void actualizarRelojVisual() {
+
+        lblRelojSimulado.setText(
+                "Fecha simulada: "
+                        + reloj.ahora().format(formatoFecha)
+        );
+    }
+
     private void actualizarEstadoProgramaciones() {
 
         lblEstadoProgramaciones.setText(
                 "Programaciones pendientes: "
-                        + programacionService.cantidadPendientes());
+                        + programacionService.cantidadPendientes()
+        );
     }
 
     // -------------------------------------------------
@@ -564,6 +718,7 @@ public class ModuloTresController {
         for (Notificacion notificacion :
                 notificacionService.consultarNotificaciones(
                         clienteId)) {
+
             lista.add(notificacion);
         }
 
@@ -574,10 +729,10 @@ public class ModuloTresController {
                 notificacionService.contarNoLeidas(clienteId);
 
         lblCantidadNoLeidas.setText(
-                "Notificaciones sin leer: " + noLeidas);
+                "Notificaciones sin leer: " + noLeidas
+        );
     }
 
-    // Actualiza avisos solo si la tabla muestra ese cliente.
     private void actualizarNotificacionesSiCorresponde(
             String clienteId) {
 
