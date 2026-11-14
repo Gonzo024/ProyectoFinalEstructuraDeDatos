@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Pantalla de inicio del Monedero Virtual.
+    Izquierda: panel de marca. Derecha: tarjetas para entrar a cada modulo.
+    Los estilos estan en css/monedero.css.
+-->
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:id="raizInicio"
+            fx:controller="co.edu.uniquindio.poo.vista.PrincipalController"
+            styleClass="raiz"
+            stylesheets="@../css/monedero.css">
+
+    <!-- ============================================ PANEL DE MARCA -->
+
+    <left>
+        <VBox styleClass="panel-marca"
+              prefWidth="330" minWidth="300">
+
+            <Label text="MV" styleClass="logo"/>
+
+            <Label text="Monedero Virtual"
+                   styleClass="marca-titulo"/>
+
+            <Label text="Tu dinero seguro, ordenado y siempre a la mano."
+                   styleClass="marca-texto"
+                   wrapText="true"/>
+
+            <Region styleClass="marca-separador"/>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Region styleClass="marca-punto"/>
+                <Label text="Depositos, retiros y transferencias"
+                       styleClass="marca-item"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Region styleClass="marca-punto"/>
+                <Label text="Varios monederos en una sola cuenta"
+                       styleClass="marca-item"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Region styleClass="marca-punto"/>
+                <Label text="Puntos, rangos y beneficios"
+                       styleClass="marca-item"/>
+            </HBox>
+
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Region styleClass="marca-punto"/>
+                <Label text="Programaciones y analisis de gastos"
+                       styleClass="marca-item"/>
+            </HBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Label text="Proyecto final · Estructuras de Datos"
+                   styleClass="marca-pie"/>
+
+            <Label text="Universidad del Quindio"
+                   styleClass="marca-pie"/>
+
+        </VBox>
+    </left>
+
+    <!-- ============================================ MODULOS -->
+
+    <center>
+        <VBox styleClass="panel-inicio">
+
+            <Label text="PANEL PRINCIPAL"
+                   styleClass="inicio-etiqueta"/>
+
+            <Label text="¿Que quieres hacer hoy?"
+                   styleClass="inicio-titulo"/>
+
+            <Label text="Elige un modulo para empezar. Puedes volver a esta pantalla en cualquier momento."
+                   styleClass="inicio-texto"
+                   wrapText="true"/>
+
+            <Region minHeight="18"/>
+
+            <HBox spacing="18" VBox.vgrow="NEVER">
+
+                <!-- Modulo 1 -->
+                <VBox styleClass="tarjeta-modulo"
+                      HBox.hgrow="ALWAYS"
+                      prefWidth="0" maxWidth="Infinity"
+                      minHeight="270">
+
+                    <Label text="01" styleClass="insignia"/>
+
+                    <Label text="Mi monedero"
+                           styleClass="tarjeta-titulo"/>
+
+                    <Label text="Registra clientes, crea monederos, realiza operaciones y revisa el historial."
+                           styleClass="tarjeta-texto"
+                           wrapText="true"/>
+
+                    <Label text="Listas · Pilas · Grafo dirigido"
+                           styleClass="tarjeta-detalle"
+                           wrapText="true"/>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <Button text="Abrir  →"
+                            styleClass="boton-primario"
+                            maxWidth="Infinity"
+                            onAction="#abrirModuloUno"/>
+                </VBox>
+
+                <!-- Modulo 2 -->
+                <VBox styleClass="tarjeta-modulo,deshabilitada"
+                      HBox.hgrow="ALWAYS"
+                      prefWidth="0" maxWidth="Infinity"
+                      minHeight="270">
+
+                    <Label text="02" styleClass="insignia"/>
+
+                    <Label text="Puntos y rangos"
+                           styleClass="tarjeta-titulo"/>
+
+                    <Label text="Acumula puntos por cada transaccion, sube de rango y canjea beneficios."
+                           styleClass="tarjeta-texto"
+                           wrapText="true"/>
+
+                    <Label text="Arboles ABB y AVL · Tabla hash"
+                           styleClass="tarjeta-detalle"
+                           wrapText="true"/>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <Button text="Proximamente"
+                            styleClass="boton-secundario"
+                            maxWidth="Infinity"
+                            disable="true"/>
+                </VBox>
+
+                <!-- Modulo 3 -->
+                <VBox styleClass="tarjeta-modulo"
+                      HBox.hgrow="ALWAYS"
+                      prefWidth="0" maxWidth="Infinity"
+                      minHeight="270">
+
+                    <Label text="03" styleClass="insignia"/>
+
+                    <Label text="Planeacion y analisis"
+                           styleClass="tarjeta-titulo"/>
+
+                    <Label text="Programa transacciones, revisa tus notificaciones y analiza tus gastos."
+                           styleClass="tarjeta-texto"
+                           wrapText="true"/>
+
+                    <Label text="Cola de prioridad · Lista circular"
+                           styleClass="tarjeta-detalle"
+                           wrapText="true"/>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <Button text="Abrir  →"
+                            styleClass="boton-primario"
+                            maxWidth="Infinity"
+                            onAction="#abrirModuloTres"/>
+                </VBox>
+
+            </HBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Label text="Monedero Virtual · version 1.0"
+                   styleClass="inicio-pie"/>
+
+        </VBox>
+    </center>
+
+</BorderPane>

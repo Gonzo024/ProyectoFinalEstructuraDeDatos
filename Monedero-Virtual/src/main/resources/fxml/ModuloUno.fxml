@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Modulo 1: clientes, operaciones del monedero, historial y multimonedero.
+    Los colores y formas estan en css/monedero.css (clases: tarjeta, boton-primario, etc.).
+-->
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="co.edu.uniquindio.poo.vista.ModuloUnoController"
+      styleClass="raiz"
+      stylesheets="@../css/monedero.css">
+
+    <!-- ENCABEZADO -->
+
+    <VBox styleClass="encabezado" spacing="4">
+        <Label text="Monedero Virtual"
+               styleClass="encabezado-titulo"/>
+        <Label text="Clientes · Operaciones · Historial · Multimonedero"
+               styleClass="encabezado-subtitulo"/>
+    </VBox>
+
+    <TabPane tabClosingPolicy="UNAVAILABLE"
+             VBox.vgrow="ALWAYS">
+
+        <tabs>
+
+            <!-- ============================================ CLIENTES -->
+
+            <Tab text="Clientes">
+
+                <VBox styleClass="contenido-pestana">
+
+                    <HBox spacing="16">
+
+                        <!-- Registrar cliente -->
+                        <VBox styleClass="tarjeta" HBox.hgrow="ALWAYS">
+
+                            <Label text="Registrar cliente"
+                                   styleClass="titulo-seccion"/>
+
+                            <Label text="Al registrarlo se le crea automaticamente el monedero Principal."
+                                   styleClass="texto-ayuda"/>
+
+                            <TextField fx:id="txtNombre"
+                                       promptText="Nombre completo"/>
+
+                            <TextField fx:id="txtCorreo"
+                                       promptText="Correo electronico"/>
+
+                            <HBox spacing="10">
+                                <PasswordField fx:id="txtPin"
+                                               promptText="PIN"
+                                               HBox.hgrow="ALWAYS"/>
+                                <Button text="Registrar"
+                                        styleClass="boton-primario"
+                                        onAction="#registrarCliente"/>
+                            </HBox>
+
+                        </VBox>
+
+                        <!-- Nuevo monedero -->
+                        <VBox styleClass="tarjeta" HBox.hgrow="ALWAYS">
+
+                            <Label text="Monederos"
+                                   styleClass="titulo-seccion"/>
+
+                            <Label text="Consulta los monederos de un cliente o crea uno nuevo (maximo 5)."
+                                   styleClass="texto-ayuda"/>
+
+                            <HBox spacing="10">
+                                <TextField fx:id="txtClienteMonederos"
+                                           promptText="ID del cliente, por ejemplo C1"
+                                           HBox.hgrow="ALWAYS"/>
+                                <Button text="Ver monederos"
+                                        styleClass="boton-secundario"
+                                        onAction="#consultarMonederos"/>
+                            </HBox>
+
+                            <HBox spacing="10">
+                                <TextField fx:id="txtNombreMonedero"
+                                           promptText="Nombre del nuevo monedero"
+                                           HBox.hgrow="ALWAYS"/>
+                                <ComboBox fx:id="cmbTipoMonedero"
+                                          promptText="Tipo"
+                                          prefWidth="150"/>
+                            </HBox>
+
+                            <Button text="Crear monedero"
+                                    styleClass="boton-primario"
+                                    onAction="#crearMonedero"/>
+
+                        </VBox>
+
+                    </HBox>
+
+                    <!-- Lista de monederos -->
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+
+                        <HBox spacing="10">
+                            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                <Label text="Monederos del cliente"
+                                       styleClass="titulo-seccion"/>
+                                <Label text="Saldo de cada monedero"
+                                       styleClass="texto-ayuda"/>
+                            </VBox>
+                            <VBox spacing="0">
+                                <Label text="SALDO TOTAL"
+                                       styleClass="etiqueta-valor"/>
+                                <Label fx:id="lblSaldoTotal"
+                                       text="\$0.00"
+                                       styleClass="valor-grande"/>
+                            </VBox>
+                        </HBox>
+
+                        <TableView fx:id="tablaMonederos"
+                                   VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="columnaIdMonedero" text="ID"/>
+                                <TableColumn fx:id="columnaNombreMonedero" text="Nombre"/>
+                                <TableColumn fx:id="columnaTipoMonedero" text="Tipo"/>
+                                <TableColumn fx:id="columnaSaldoMonedero" text="Saldo"/>
+                            </columns>
+                        </TableView>
+
+                    </VBox>
+
+                </VBox>
+
+            </Tab>
+
+            <!-- ============================================ OPERACIONES -->
+
+            <Tab text="Operaciones">
+
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta">
+
+                        <Label text="Realizar una operacion"
+                               styleClass="titulo-seccion"/>
+
+                        <Label text="El monedero destino solo se usa en transferencias y la categoria solo en pagos."
+                               styleClass="texto-ayuda"/>
+
+                        <GridPane hgap="14" vgap="12">
+
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="150"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+
+                            <Label text="Operacion"
+                                   GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                            <ComboBox fx:id="cmbOperacion"
+                                      promptText="Elige una operacion"
+                                      maxWidth="Infinity"
+                                      GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+
+                            <Label text="Monedero"
+                                   GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtMonederoOrigen"
+                                       promptText="Monedero de origen, por ejemplo M1"
+                                       GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+                            <Label text="Monedero destino"
+                                   GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtMonederoDestino"
+                                       promptText="Solo para transferencias"
+                                       GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+                            <Label text="Monto"
+                                   GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtMonto"
+                                       promptText="Por ejemplo 1500.50"
+                                       GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+                            <Label text="Categoria"
+                                   GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                            <ComboBox fx:id="cmbCategoria"
+                                      promptText="Solo para pagos"
+                                      maxWidth="Infinity"
+                                      GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+                            <Label text="Descripcion"
+                                   GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                            <TextField fx:id="txtDescripcion"
+                                       promptText="Opcional"
+                                       GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+
+                        </GridPane>
+
+                        <HBox spacing="10">
+                            <Button text="Realizar operacion"
+                                    styleClass="boton-primario"
+                                    onAction="#realizarOperacion"/>
+                        </HBox>
+
+                    </VBox>
+
+                    <VBox styleClass="tarjeta">
+
+                        <Label text="Resultado"
+                               styleClass="titulo-seccion"/>
+
+                        <Label fx:id="lblResultadoOperacion"
+                               text="Aun no se ha realizado ninguna operacion."
+                               styleClass="mensaje-estado"
+                               wrapText="true"/>
+
+                        <Label text="Comisiones: retiro 1 %. Transferencia a otro cliente 1.5 %, con descuento segun el rango (Plata 10 %, Oro 25 %, Platino 50 %)."
+                               styleClass="texto-ayuda"
+                               wrapText="true"/>
+
+                    </VBox>
+
+                </VBox>
+
+            </Tab>
+
+            <!-- ============================================ HISTORIAL -->
+
+            <Tab text="Historial">
+
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta">
+
+                        <Label text="Historial del monedero"
+                               styleClass="titulo-seccion"/>
+
+                        <HBox spacing="10">
+                            <TextField fx:id="txtMonederoHistorial"
+                                       promptText="ID del monedero, por ejemplo M1"
+                                       HBox.hgrow="ALWAYS"/>
+                            <Button text="Consultar"
+                                    styleClass="boton-primario"
+                                    onAction="#consultarHistorial"/>
+                            <Button text="Verificar integridad"
+                                    styleClass="boton-secundario"
+                                    onAction="#verificarIntegridad"/>
+                            <Button text="Revertir ultima"
+                                    styleClass="boton-peligro"
+                                    onAction="#revertirUltima"/>
+                        </HBox>
+
+                    </VBox>
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+
+                        <HBox spacing="10">
+                            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                <Label text="Movimientos"
+                                       styleClass="titulo-seccion"/>
+                                <Label fx:id="lblEstadoHistorial"
+                                       text="Sin consulta"
+                                       styleClass="mensaje-estado"
+                                       wrapText="true"/>
+                            </VBox>
+                            <VBox spacing="0">
+                                <Label text="SALDO ACTUAL"
+                                       styleClass="etiqueta-valor"/>
+                                <Label fx:id="lblSaldoHistorial"
+                                       text="\$0.00"
+                                       styleClass="valor-grande"/>
+                            </VBox>
+                        </HBox>
+
+                        <TableView fx:id="tablaHistorial"
+                                   VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="columnaIdTransaccion" text="ID"/>
+                                <TableColumn fx:id="columnaTipoTransaccion" text="Tipo"/>
+                                <TableColumn fx:id="columnaMontoTransaccion" text="Monto"/>
+                                <TableColumn fx:id="columnaComisionTransaccion" text="Comision"/>
+                                <TableColumn fx:id="columnaFechaTransaccion" text="Fecha"/>
+                                <TableColumn fx:id="columnaEstadoTransaccion" text="Estado"/>
+                                <TableColumn fx:id="columnaCategoriaTransaccion" text="Categoria"/>
+                            </columns>
+                        </TableView>
+
+                    </VBox>
+
+                </VBox>
+
+            </Tab>
+
+            <!-- ============================================ MULTIMONEDERO -->
+
+            <Tab text="Multimonedero">
+
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta">
+
+                        <Label text="Movimientos entre mis monederos"
+                               styleClass="titulo-seccion"/>
+
+                        <Label text="Cada fila es una flecha del grafo dirigido: cuanto dinero ha pasado de un monedero a otro."
+                               styleClass="texto-ayuda"/>
+
+                        <HBox spacing="10">
+                            <TextField fx:id="txtClienteMultimonedero"
+                                       promptText="ID del cliente, por ejemplo C1"
+                                       HBox.hgrow="ALWAYS"/>
+                            <Button text="Consultar"
+                                    styleClass="boton-primario"
+                                    onAction="#consultarMultimonedero"/>
+                        </HBox>
+
+                    </VBox>
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+
+                        <TableView fx:id="tablaAristas"
+                                   VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="columnaDesde" text="Desde"/>
+                                <TableColumn fx:id="columnaHacia" text="Hacia"/>
+                                <TableColumn fx:id="columnaTotalMovido" text="Total movido"/>
+                                <TableColumn fx:id="columnaVeces" text="Veces"/>
+                            </columns>
+                        </TableView>
+
+                    </VBox>
+
+                </VBox>
+
+            </Tab>
+
+        </tabs>
+
+    </TabPane>
+
+</VBox>

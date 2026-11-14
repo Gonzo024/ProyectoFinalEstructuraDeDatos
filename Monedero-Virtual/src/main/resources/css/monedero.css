@@ -1,0 +1,493 @@
+/*
+ * Estilos del Monedero Virtual.
+ * Paleta: azules sobrios (confianza), fondos claros y poco contraste en los bordes.
+ *
+ *   Azul marino (principal) ... #1F3A5F
+ *   Azul acero (secundario) ... #3D5A80
+ *   Azul suave (resaltados) ... #DCE6F2
+ *   Fondo ..................... #F4F6FA
+ *   Texto ..................... #263238
+ *   Texto suave ............... #6B7A8F
+ *   Verde (exito) ............. #2E7D5B
+ *   Rojo apagado (peligro) .... #B5473F
+ */
+
+/* ------------------------------------------------------------ base */
+
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #263238;
+}
+
+.raiz {
+    -fx-background-color: #F4F6FA;
+}
+
+/* ------------------------------------------------------------ encabezado */
+
+.encabezado {
+    -fx-background-color: linear-gradient(to right, #1F3A5F, #2C4F7C);
+    -fx-padding: 22 30 22 30;
+}
+
+.encabezado-titulo {
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.encabezado-subtitulo {
+    -fx-text-fill: #C9D6E8;
+    -fx-font-size: 13px;
+}
+
+/* ------------------------------------------------------------ pestañas */
+
+.tab-pane {
+    -fx-padding: 10 20 20 20;
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0 0 6 0;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent #DDE3EC transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tab-pane .tab {
+    -fx-background-color: transparent;
+    -fx-padding: 8 18 8 18;
+    -fx-background-insets: 0;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #6B7A8F;
+    -fx-font-size: 14px;
+}
+
+.tab-pane .tab:hover .tab-label {
+    -fx-text-fill: #3D5A80;
+}
+
+.tab-pane .tab:selected {
+    -fx-border-color: transparent transparent #1F3A5F transparent;
+    -fx-border-width: 0 0 3 0;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #1F3A5F;
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab:selected .focus-indicator {
+    -fx-border-color: transparent;
+}
+
+.contenido-pestana {
+    -fx-padding: 16 4 4 4;
+    -fx-spacing: 16;
+}
+
+/* ------------------------------------------------------------ tarjetas */
+
+.tarjeta {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-border-color: #E3E8EF;
+    -fx-border-radius: 10;
+    -fx-padding: 18 20 18 20;
+    -fx-spacing: 12;
+    -fx-effect: dropshadow(gaussian, rgba(31, 58, 95, 0.08), 14, 0, 0, 3);
+}
+
+.titulo-seccion {
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+.texto-ayuda {
+    -fx-text-fill: #6B7A8F;
+    -fx-font-size: 12px;
+}
+
+.valor-grande {
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+}
+
+.etiqueta-valor {
+    -fx-text-fill: #6B7A8F;
+    -fx-font-size: 12px;
+}
+
+.mensaje-estado {
+    -fx-text-fill: #3D5A80;
+    -fx-font-size: 13px;
+}
+
+.mensaje-exito {
+    -fx-text-fill: #2E7D5B;
+}
+
+.mensaje-error {
+    -fx-text-fill: #B5473F;
+}
+
+/* ------------------------------------------------------------ campos */
+
+.text-field, .password-field, .combo-box {
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+    -fx-border-color: #D5DCE6;
+    -fx-border-radius: 6;
+    -fx-padding: 6 10 6 10;
+    -fx-prompt-text-fill: #9AA6B6;
+}
+
+.combo-box {
+    -fx-padding: 2 4 2 4;
+}
+
+.text-field:focused, .password-field:focused, .combo-box:focused {
+    -fx-border-color: #3D5A80;
+    -fx-border-width: 1.5;
+}
+
+.combo-box .list-cell {
+    -fx-text-fill: #263238;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #D5DCE6;
+}
+
+.combo-box-popup .list-cell:filled:hover,
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #DCE6F2;
+    -fx-text-fill: #1F3A5F;
+}
+
+/* ------------------------------------------------------------ botones */
+
+.button {
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 8 18 8 18;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.boton-primario {
+    -fx-background-color: #1F3A5F;
+    -fx-text-fill: white;
+}
+
+.boton-primario:hover {
+    -fx-background-color: #2C4F7C;
+}
+
+.boton-primario:pressed {
+    -fx-background-color: #172C48;
+}
+
+.boton-secundario {
+    -fx-background-color: white;
+    -fx-border-color: #3D5A80;
+    -fx-text-fill: #1F3A5F;
+}
+
+.boton-secundario:hover {
+    -fx-background-color: #EEF2F7;
+}
+
+.boton-peligro {
+    -fx-background-color: white;
+    -fx-border-color: #B5473F;
+    -fx-text-fill: #B5473F;
+}
+
+.boton-peligro:hover {
+    -fx-background-color: #FBEFEE;
+}
+
+.boton-modulo {
+    -fx-background-color: white;
+    -fx-border-color: #E3E8EF;
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 15px;
+    -fx-padding: 18 22 18 22;
+    -fx-alignment: center-left;
+    -fx-effect: dropshadow(gaussian, rgba(31, 58, 95, 0.08), 14, 0, 0, 3);
+}
+
+.boton-modulo:hover {
+    -fx-background-color: #EEF2F7;
+    -fx-border-color: #3D5A80;
+}
+
+.boton-modulo:disabled {
+    -fx-opacity: 0.55;
+}
+
+/* ------------------------------------------------------------ tablas */
+
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #E3E8EF;
+    -fx-border-radius: 8;
+    -fx-padding: 0;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #EEF2F7;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6 0 6 0;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #3D5A80;
+    -fx-font-weight: bold;
+    -fx-alignment: center-left;
+    -fx-padding: 0 0 0 10;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #F0F3F7 transparent;
+    -fx-table-cell-border-color: transparent;
+    -fx-cell-size: 34px;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #FAFBFD;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #F1F5FA;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #DCE6F2;
+}
+
+.table-row-cell .table-cell {
+    -fx-text-fill: #263238;
+    -fx-padding: 0 0 0 10;
+}
+
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: #1F3A5F;
+}
+
+.table-view .placeholder .label {
+    -fx-text-fill: #9AA6B6;
+}
+
+/* ------------------------------------------------------------ barras de desplazamiento */
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #C9D3E0;
+    -fx-background-radius: 6;
+}
+
+/* ============================================================ PANTALLA DE INICIO */
+
+/* Panel izquierdo con la marca */
+.panel-marca {
+    -fx-background-color: linear-gradient(to bottom, #1F3A5F, #15293F);
+    -fx-padding: 48 36 32 36;
+    -fx-spacing: 14;
+}
+
+.logo {
+    -fx-background-color: #DCE6F2;
+    -fx-background-radius: 14;
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-min-width: 58;
+    -fx-min-height: 58;
+    -fx-max-width: 58;
+    -fx-max-height: 58;
+}
+
+.marca-titulo {
+    -fx-text-fill: white;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.marca-texto {
+    -fx-text-fill: #C9D6E8;
+    -fx-font-size: 14px;
+    -fx-line-spacing: 3;
+}
+
+.marca-separador {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+}
+
+.marca-item {
+    -fx-text-fill: #E6EDF6;
+    -fx-font-size: 13px;
+}
+
+.marca-punto {
+    -fx-background-color: #7FA7D1;
+    -fx-background-radius: 4;
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+}
+
+.marca-pie {
+    -fx-text-fill: #8EA3BD;
+    -fx-font-size: 11px;
+}
+
+/* Panel derecho */
+.panel-inicio {
+    -fx-background-color: #F4F6FA;
+    -fx-padding: 48 44 36 44;
+    -fx-spacing: 10;
+}
+
+.inicio-etiqueta {
+    -fx-text-fill: #3D5A80;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.inicio-titulo {
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+}
+
+.inicio-texto {
+    -fx-text-fill: #6B7A8F;
+    -fx-font-size: 14px;
+}
+
+/* Tarjetas de los módulos */
+.tarjeta-modulo {
+    -fx-background-color: white;
+    -fx-background-radius: 14;
+    -fx-border-color: #E3E8EF;
+    -fx-border-radius: 14;
+    -fx-padding: 24 22 22 22;
+    -fx-spacing: 10;
+    -fx-effect: dropshadow(gaussian, rgba(31, 58, 95, 0.08), 18, 0, 0, 4);
+}
+
+.tarjeta-modulo:hover {
+    -fx-border-color: #3D5A80;
+    -fx-effect: dropshadow(gaussian, rgba(31, 58, 95, 0.16), 22, 0, 0, 6);
+}
+
+.tarjeta-modulo.deshabilitada {
+    -fx-opacity: 0.6;
+}
+
+.tarjeta-modulo.deshabilitada:hover {
+    -fx-border-color: #E3E8EF;
+    -fx-effect: dropshadow(gaussian, rgba(31, 58, 95, 0.08), 18, 0, 0, 4);
+}
+
+.insignia {
+    -fx-background-color: #EEF2F7;
+    -fx-background-radius: 10;
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-max-width: 44;
+    -fx-max-height: 44;
+}
+
+.tarjeta-titulo {
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.tarjeta-texto {
+    -fx-text-fill: #6B7A8F;
+    -fx-font-size: 13px;
+    -fx-line-spacing: 2;
+}
+
+.tarjeta-detalle {
+    -fx-text-fill: #3D5A80;
+    -fx-font-size: 12px;
+}
+
+.inicio-pie {
+    -fx-text-fill: #9AA6B6;
+    -fx-font-size: 11px;
+}
+
+/* ============================================================ BARRA PARA VOLVER */
+
+.barra-navegacion {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #E3E8EF transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 10 24 10 16;
+    -fx-spacing: 14;
+    -fx-alignment: center-left;
+}
+
+.boton-volver {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1F3A5F;
+    -fx-font-size: 13px;
+    -fx-padding: 6 12 6 12;
+}
+
+.boton-volver:hover {
+    -fx-background-color: #EEF2F7;
+}
+
+.barra-separador {
+    -fx-background-color: #E3E8EF;
+    -fx-min-width: 1;
+    -fx-max-width: 1;
+    -fx-min-height: 22;
+}
+
+.barra-titulo {
+    -fx-text-fill: #263238;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.barra-marca {
+    -fx-text-fill: #9AA6B6;
+    -fx-font-size: 12px;
+}
+
