@@ -5,6 +5,7 @@
 <?import javafx.geometry.Insets?>
 
 <VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="co.edu.uniquindio.poo.vista.ModuloTresController"
       spacing="15"
       style="-fx-background-color: #F4F6FA;">
 
@@ -69,36 +70,67 @@
                 </VBox>
             </Tab>
 
-            <Tab text="Notificaciones">
-                <VBox spacing="15"
-                      style="-fx-padding: 20;">
+            
+<Tab text="Notificaciones">
 
-                    <Label text="Mis notificaciones"
-                           style="-fx-font-size: 20px;
-                                  -fx-font-weight: bold;"/>
+    <VBox spacing="15"
+          style="-fx-padding: 20;">
 
-                    <TextField promptText="ID del cliente"/>
+        <Label text="Mis notificaciones"
+               style="-fx-font-size: 20px;
+                      -fx-font-weight: bold;"/>
 
-                    <HBox spacing="10">
-                        <Button text="Consultar"/>
-                        <Button text="Marcar como leída"/>
-                    </HBox>
+        <Label text="Consulta las notificaciones de un cliente."/>
 
-                    <TableView VBox.vgrow="ALWAYS">
-                        <columns>
-                            <TableColumn text="ID"
-                                         prefWidth="90"/>
-                            <TableColumn text="Tipo"
-                                         prefWidth="170"/>
-                            <TableColumn text="Mensaje"
-                                         prefWidth="350"/>
-                            <TableColumn text="Leída"
-                                         prefWidth="100"/>
-                        </columns>
-                    </TableView>
+        <TextField fx:id="txtClienteNotificacion"
+                   promptText="ID del cliente, por ejemplo C1"/>
 
-                </VBox>
-            </Tab>
+        <HBox spacing="10">
+
+            <Button text="Consultar"
+                    onAction="#consultarNotificaciones"/>
+
+            <Button text="Crear aviso de prueba"
+                    onAction="#crearNotificacionPrueba"/>
+
+            <Button text="Marcar como leida"
+                    onAction="#marcarNotificacionLeida"/>
+
+        </HBox>
+
+        <Label fx:id="lblCantidadNoLeidas"
+               text="Notificaciones sin leer: 0"
+               style="-fx-font-weight: bold;"/>
+
+        <TableView fx:id="tablaNotificaciones"
+                   VBox.vgrow="ALWAYS">
+
+            <columns>
+
+                <TableColumn fx:id="columnaId"
+                             text="ID"
+                             prefWidth="90"/>
+
+                <TableColumn fx:id="columnaTipo"
+                             text="Tipo"
+                             prefWidth="170"/>
+
+                <TableColumn fx:id="columnaMensaje"
+                             text="Mensaje"
+                             prefWidth="350"/>
+
+                <TableColumn fx:id="columnaLeida"
+                             text="Leida"
+                             prefWidth="100"/>
+
+            </columns>
+
+        </TableView>
+
+    </VBox>
+
+</Tab>
+
 
             <Tab text="Análisis de gastos">
                 <VBox spacing="15"
