@@ -4,276 +4,301 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<!--
+    Modulo 3: programaciones, notificaciones y analisis de gastos.
+    Solo cambia el aspecto (css/monedero.css). Los fx:id, los onAction y el controlador
+    son exactamente los mismos. La tabla de programaciones sigue dentro de un VBox,
+    porque el controlador agrega ahi los botones de simulacion de vencimientos.
+-->
+
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="co.edu.uniquindio.poo.vista.ModuloTresController"
-      spacing="15"
-      style="-fx-background-color: #F4F6FA;">
+      styleClass="raiz"
+      stylesheets="@../css/monedero.css">
 
-    <padding>
-        <Insets top="25" right="25" bottom="25" left="25"/>
-    </padding>
+    <!-- ENCABEZADO -->
 
-    <Label text="Monedero Virtual"
-           style="-fx-font-size: 26px; -fx-font-weight: bold;"/>
-
-    <Label text="Programaciones, notificaciones y analisis de gastos"
-           style="-fx-font-size: 14px; -fx-text-fill: #666666;"/>
+    <VBox styleClass="encabezado" spacing="4">
+        <Label text="Monedero Virtual"
+               styleClass="encabezado-titulo"/>
+        <Label text="Programaciones · Notificaciones · Analisis de gastos"
+               styleClass="encabezado-subtitulo"/>
+    </VBox>
 
     <TabPane tabClosingPolicy="UNAVAILABLE"
              VBox.vgrow="ALWAYS">
 
         <tabs>
 
-            <!-- PROGRAMACIONES -->
+            <!-- ============================================ PROGRAMACIONES -->
 
             <Tab text="Programaciones">
 
-                <VBox spacing="12"
-                      style="-fx-padding: 20;">
+                <VBox styleClass="contenido-pestana">
 
-                    <Label text="Transacciones programadas"
-                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <VBox styleClass="tarjeta">
 
-                    <Label text="Registra operaciones futuras. No se mueve dinero hasta su ejecucion."/>
+                        <Label text="Transacciones programadas"
+                               styleClass="titulo-seccion"/>
 
-                    <HBox spacing="10">
+                        <Label text="Registra operaciones futuras. No se mueve dinero hasta su ejecucion."
+                               styleClass="texto-ayuda"/>
 
-                        <TextField fx:id="txtClienteProgramacion"
-                                   promptText="ID del cliente (C1)"
-                                   HBox.hgrow="ALWAYS"/>
+                        <HBox spacing="10">
 
-                        <TextField fx:id="txtMonederoProgramacion"
-                                   promptText="ID del monedero (M1)"
-                                   HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="txtClienteProgramacion"
+                                       promptText="ID del cliente (C1)"
+                                       HBox.hgrow="ALWAYS"/>
 
-                    </HBox>
+                            <TextField fx:id="txtMonederoProgramacion"
+                                       promptText="ID del monedero (M1)"
+                                       HBox.hgrow="ALWAYS"/>
 
-                    <HBox spacing="10">
+                            <ComboBox fx:id="comboTipo"
+                                      prefWidth="210"
+                                      promptText="Tipo de transaccion"/>
 
-                        <ComboBox fx:id="comboTipo"
-                                  prefWidth="230"
-                                  promptText="Tipo de transaccion"/>
+                        </HBox>
 
-                        <TextField fx:id="txtMontoProgramacion"
-                                   promptText="Monto"
-                                   HBox.hgrow="ALWAYS"/>
+                        <HBox spacing="10">
 
-                        <ComboBox fx:id="comboFrecuencia"
-                                  prefWidth="170"
-                                  promptText="Frecuencia"/>
+                            <TextField fx:id="txtMontoProgramacion"
+                                       promptText="Monto"
+                                       HBox.hgrow="ALWAYS"/>
 
-                    </HBox>
+                            <ComboBox fx:id="comboFrecuencia"
+                                      prefWidth="160"
+                                      promptText="Frecuencia"/>
 
-                    <HBox spacing="10">
+                            <DatePicker fx:id="fechaProgramacion"
+                                        promptText="Fecha futura"/>
 
-                        <DatePicker fx:id="fechaProgramacion"
-                                    promptText="Fecha futura"/>
+                            <TextField fx:id="txtHoraProgramacion"
+                                       promptText="HH:mm"
+                                       prefWidth="90"/>
 
-                        <TextField fx:id="txtHoraProgramacion"
-                                   promptText="HH:mm"
-                                   prefWidth="100"/>
+                        </HBox>
 
-                    </HBox>
+                        <Label text="Destino (obligatorio para transferencias)"
+                               styleClass="etiqueta-valor"/>
 
-                    <Label text="Destino: obligatorio para transferencias"
-                           style="-fx-font-weight: bold;"/>
+                        <HBox spacing="10">
 
-                    <HBox spacing="10">
+                            <TextField fx:id="txtClienteDestino"
+                                       promptText="ID cliente destino"
+                                       HBox.hgrow="ALWAYS"/>
 
-                        <TextField fx:id="txtClienteDestino"
-                                   promptText="ID cliente destino"
-                                   HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="txtMonederoDestino"
+                                       promptText="ID monedero destino"
+                                       HBox.hgrow="ALWAYS"/>
 
-                        <TextField fx:id="txtMonederoDestino"
-                                   promptText="ID monedero destino"
-                                   HBox.hgrow="ALWAYS"/>
+                        </HBox>
 
-                    </HBox>
+                        <HBox spacing="10">
 
-                    <HBox spacing="10">
+                            <Button text="Programar"
+                                    styleClass="boton-primario"
+                                    onAction="#crearProgramacion"/>
 
-                        <Button text="Programar"
-                                onAction="#crearProgramacion"/>
+                            <Button text="Consultar siguiente"
+                                    styleClass="boton-secundario"
+                                    onAction="#consultarSiguienteProgramacion"/>
 
-                        <Button text="Cancelar seleccionada"
-                                onAction="#cancelarProgramacion"/>
+                            <Button text="Cancelar seleccionada"
+                                    styleClass="boton-peligro"
+                                    onAction="#cancelarProgramacion"/>
 
-                        <Button text="Consultar siguiente"
-                                onAction="#consultarSiguienteProgramacion"/>
+                        </HBox>
 
-                    </HBox>
+                    </VBox>
 
-                    <Label fx:id="lblEstadoProgramaciones"
-                           text="Programaciones pendientes: 0"
-                           style="-fx-font-weight: bold;"/>
+                    <!-- El controlador agrega aqui los botones de simulacion, encima de la tabla. -->
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
 
-                    <TableView fx:id="tablaProgramaciones"
-                               VBox.vgrow="ALWAYS">
+                        <Label fx:id="lblEstadoProgramaciones"
+                               text="Programaciones pendientes: 0"
+                               styleClass="titulo-seccion"/>
 
-                        <columns>
+                        <TableView fx:id="tablaProgramaciones"
+                                   VBox.vgrow="ALWAYS"
+                                   minHeight="140">
+                            <columns>
+                                <TableColumn fx:id="colProgId"
+                                             text="ID"
+                                             prefWidth="75"/>
+                                <TableColumn fx:id="colProgTipo"
+                                             text="Tipo"
+                                             prefWidth="170"/>
+                                <TableColumn fx:id="colProgMonto"
+                                             text="Monto"
+                                             prefWidth="130"/>
+                                <TableColumn fx:id="colProgFecha"
+                                             text="Fecha y hora"
+                                             prefWidth="175"/>
+                                <TableColumn fx:id="colProgFrecuencia"
+                                             text="Frecuencia"
+                                             prefWidth="135"/>
+                            </columns>
+                        </TableView>
 
-                            <TableColumn fx:id="colProgId"
-                                         text="ID"
-                                         prefWidth="75"/>
+                        <Label text="Los movimientos se almacenan en memoria. No se ejecutan transferencias ni pagos automaticamente."
+                               wrapText="true"
+                               styleClass="texto-ayuda"/>
 
-                            <TableColumn fx:id="colProgTipo"
-                                         text="Tipo"
-                                         prefWidth="170"/>
-
-                            <TableColumn fx:id="colProgMonto"
-                                         text="Monto"
-                                         prefWidth="130"/>
-
-                            <TableColumn fx:id="colProgFecha"
-                                         text="Fecha y hora"
-                                         prefWidth="175"/>
-
-                            <TableColumn fx:id="colProgFrecuencia"
-                                         text="Frecuencia"
-                                         prefWidth="135"/>
-
-                        </columns>
-
-                    </TableView>
-
-                    <Label text="Los movimientos se almacenan en memoria. No se ejecutan transferencias ni pagos automaticamente."
-                           wrapText="true"
-                           style="-fx-font-size: 12px; -fx-text-fill: #777777;"/>
+                    </VBox>
 
                 </VBox>
 
             </Tab>
 
-            <!-- NOTIFICACIONES -->
+            <!-- ============================================ NOTIFICACIONES -->
 
             <Tab text="Notificaciones">
 
-                <VBox spacing="15"
-                      style="-fx-padding: 20;">
+                <VBox styleClass="contenido-pestana">
 
-                    <Label text="Mis notificaciones"
-                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <VBox styleClass="tarjeta">
 
-                    <Label text="Consulta las notificaciones de un cliente."/>
+                        <Label text="Mis notificaciones"
+                               styleClass="titulo-seccion"/>
 
-                    <TextField fx:id="txtClienteNotificacion"
-                               promptText="ID del cliente, por ejemplo C1"/>
+                        <Label text="Consulta las notificaciones de un cliente."
+                               styleClass="texto-ayuda"/>
 
-                    <HBox spacing="10">
+                        <HBox spacing="10">
 
-                        <Button text="Consultar"
-                                onAction="#consultarNotificaciones"/>
+                            <TextField fx:id="txtClienteNotificacion"
+                                       promptText="ID del cliente, por ejemplo C1"
+                                       HBox.hgrow="ALWAYS"/>
 
-                        <Button text="Crear aviso de prueba"
-                                onAction="#crearNotificacionPrueba"/>
+                            <Button text="Consultar"
+                                    styleClass="boton-primario"
+                                    onAction="#consultarNotificaciones"/>
 
-                        <Button text="Marcar como leida"
-                                onAction="#marcarNotificacionLeida"/>
+                            <Button text="Crear aviso de prueba"
+                                    styleClass="boton-secundario"
+                                    onAction="#crearNotificacionPrueba"/>
 
-                    </HBox>
+                            <Button text="Marcar como leida"
+                                    styleClass="boton-secundario"
+                                    onAction="#marcarNotificacionLeida"/>
 
-                    <Label fx:id="lblCantidadNoLeidas"
-                           text="Notificaciones sin leer: 0"
-                           style="-fx-font-weight: bold;"/>
+                        </HBox>
 
-                    <TableView fx:id="tablaNotificaciones"
-                               VBox.vgrow="ALWAYS">
+                    </VBox>
 
-                        <columns>
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
 
-                            <TableColumn fx:id="columnaId"
-                                         text="ID"
-                                         prefWidth="90"/>
+                        <Label fx:id="lblCantidadNoLeidas"
+                               text="Notificaciones sin leer: 0"
+                               styleClass="titulo-seccion"/>
 
-                            <TableColumn fx:id="columnaTipo"
-                                         text="Tipo"
-                                         prefWidth="170"/>
+                        <TableView fx:id="tablaNotificaciones"
+                                   VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="columnaId"
+                                             text="ID"
+                                             prefWidth="90"/>
+                                <TableColumn fx:id="columnaTipo"
+                                             text="Tipo"
+                                             prefWidth="170"/>
+                                <TableColumn fx:id="columnaMensaje"
+                                             text="Mensaje"
+                                             prefWidth="350"/>
+                                <TableColumn fx:id="columnaLeida"
+                                             text="Leida"
+                                             prefWidth="100"/>
+                            </columns>
+                        </TableView>
 
-                            <TableColumn fx:id="columnaMensaje"
-                                         text="Mensaje"
-                                         prefWidth="350"/>
-
-                            <TableColumn fx:id="columnaLeida"
-                                         text="Leida"
-                                         prefWidth="100"/>
-
-                        </columns>
-
-                    </TableView>
+                    </VBox>
 
                 </VBox>
 
             </Tab>
 
-            <!-- ANALISIS DE GASTOS -->
+            <!-- ============================================ ANALISIS DE GASTOS -->
 
             <Tab text="Analisis de gastos">
 
-                <VBox spacing="15"
-                      style="-fx-padding: 20;">
+                <VBox styleClass="contenido-pestana">
 
-                    <Label text="Reporte de gastos"
-                           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+                    <VBox styleClass="tarjeta">
 
-                    <Label text="Consulta los gastos de todos los monederos de un cliente."/>
+                        <Label text="Reporte de gastos"
+                               styleClass="titulo-seccion"/>
 
-                    <HBox spacing="10">
+                        <Label text="Consulta los gastos de todos los monederos de un cliente."
+                               styleClass="texto-ayuda"/>
 
-                        <TextField fx:id="txtClienteGastos"
-                                   promptText="ID del cliente"
-                                   HBox.hgrow="ALWAYS"/>
+                        <HBox spacing="10">
 
-                        <Button text="Cargar datos de demostracion"
-                                onAction="#cargarDatosDemostracion"/>
+                            <TextField fx:id="txtClienteGastos"
+                                       promptText="ID del cliente"
+                                       HBox.hgrow="ALWAYS"/>
 
-                    </HBox>
+                            <Button text="Cargar datos de demostracion"
+                                    styleClass="boton-secundario"
+                                    onAction="#cargarDatosDemostracion"/>
 
-                    <HBox spacing="10">
+                        </HBox>
 
-                        <TextField fx:id="txtAnioGastos"
-                                   promptText="Año"
-                                   prefWidth="100"/>
+                        <HBox spacing="10">
 
-                        <TextField fx:id="txtMesGastos"
-                                   promptText="Mes"
-                                   prefWidth="80"/>
+                            <TextField fx:id="txtAnioGastos"
+                                       promptText="Año"
+                                       prefWidth="100"/>
 
-                        <Button text="Consultar gastos"
-                                onAction="#consultarGastos"/>
+                            <TextField fx:id="txtMesGastos"
+                                       promptText="Mes"
+                                       prefWidth="80"/>
 
-                    </HBox>
+                            <Button text="Consultar gastos"
+                                    styleClass="boton-primario"
+                                    onAction="#consultarGastos"/>
 
-                    <Label fx:id="lblTotalGastos"
-                           text="Total gastado: $0.00"
-                           style="-fx-font-size: 22px; -fx-font-weight: bold;"/>
+                        </HBox>
 
-                    <Label fx:id="lblCategoriaMayor"
-                           text="Categoria con mayor gasto: Ninguna"
-                           style="-fx-font-size: 15px;"/>
+                    </VBox>
 
-                    <Label fx:id="lblEstadoGastos"
-                           text="Sin consulta"
-                           style="-fx-text-fill: #666666;"/>
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
 
-                    <TableView fx:id="tablaGastos"
-                               VBox.vgrow="ALWAYS">
+                        <HBox spacing="10">
 
-                        <columns>
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
 
-                            <TableColumn fx:id="columnaCategoriaGastos"
-                                         text="Categoria"
-                                         prefWidth="300"/>
+                                <Label fx:id="lblCategoriaMayor"
+                                       text="Categoria con mayor gasto: Ninguna"
+                                       styleClass="titulo-seccion"/>
 
-                            <TableColumn fx:id="columnaTotalGastos"
-                                         text="Total gastado"
-                                         prefWidth="220"/>
+                                <Label fx:id="lblEstadoGastos"
+                                       text="Sin consulta"
+                                       styleClass="mensaje-estado"/>
 
-                        </columns>
+                            </VBox>
 
-                    </TableView>
+                            <Label fx:id="lblTotalGastos"
+                                   text="Total gastado: $0.00"
+                                   styleClass="valor-grande"/>
 
-                    <Label text="Los datos de demostracion son temporales y no modifican saldos."
-                           style="-fx-font-size: 12px; -fx-text-fill: #777777;"/>
+                        </HBox>
+
+                        <TableView fx:id="tablaGastos"
+                                   VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="columnaCategoriaGastos"
+                                             text="Categoria"
+                                             prefWidth="300"/>
+                                <TableColumn fx:id="columnaTotalGastos"
+                                             text="Total gastado"
+                                             prefWidth="220"/>
+                            </columns>
+                        </TableView>
+
+                        <Label text="Los datos de demostracion son temporales y no modifican saldos."
+                               styleClass="texto-ayuda"/>
+
+                    </VBox>
 
                 </VBox>
 
