@@ -7,21 +7,22 @@ import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 import co.edu.uniquindio.poo.util.Dinero;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
 public class AnalisisGastosService {
 
     // Calcula el total de todos los gastos realizados
-    public double calcularTotalGastos(
+    public BigDecimal calcularTotalGastos(
             ListaEnlazada<Transaccion> historial) {
 
-        double total = 0;
+        BigDecimal total = Dinero.CERO;
 
         for (Transaccion transaccion : historial) {
 
             if (esGastoValido(transaccion)) {
-                total += transaccion.getMonto();
+                total = total.add(transaccion.getMonto());
             }
         }
 
@@ -29,18 +30,18 @@ public class AnalisisGastosService {
     }
 
     // Calcula los gastos de una categoria especifica
-    public double calcularGastosPorCategoria(
+    public BigDecimal calcularGastosPorCategoria(
             ListaEnlazada<Transaccion> historial,
             CategoriaGasto categoria) {
 
-        double total = 0;
+        BigDecimal total = Dinero.CERO;
 
         for (Transaccion transaccion : historial) {
 
             if (esGastoValido(transaccion)
                     && transaccion.getCategoria() == categoria) {
 
-                total += transaccion.getMonto();
+                total = total.add(transaccion.getMonto());
             }
         }
 
@@ -52,15 +53,15 @@ public class AnalisisGastosService {
             ListaEnlazada<Transaccion> historial) {
 
         CategoriaGasto categoriaMayor = null;
-        double mayorGasto = 0;
+        BigDecimal mayorGasto = Dinero.CERO;
 
         for (CategoriaGasto categoria : CategoriaGasto.values()) {
 
-            double total = calcularGastosPorCategoria(
+            BigDecimal total = calcularGastosPorCategoria(
                 historial, categoria
             );
 
-            if (total > mayorGasto) {
+            if (total.compareTo(mayorGasto) > 0) {
                 mayorGasto = total;
                 categoriaMayor = categoria;
             }
@@ -86,13 +87,13 @@ public class AnalisisGastosService {
     }
 
     // Calcula los gastos de un mes y un año determinados
-    public double calcularGastosDelMes(
+    public BigDecimal calcularGastosDelMes(
             ListaEnlazada<Transaccion> historial,
             int anio,
             int mes) {
 
         YearMonth periodo = YearMonth.of(anio, mes);
-        double total = 0;
+        BigDecimal total = Dinero.CERO;
 
         for (Transaccion transaccion : historial) {
 
@@ -104,7 +105,7 @@ public class AnalisisGastosService {
                 );
 
                 if (fechaTransaccion.equals(periodo)) {
-                    total += transaccion.getMonto();
+                    total = total.add(transaccion.getMonto());
                 }
             }
         }
@@ -113,14 +114,14 @@ public class AnalisisGastosService {
     }
 
     // Calcula gastos de una categoria en un mes especifico
-    public double calcularGastosPorCategoriaYMes(
+    public BigDecimal calcularGastosPorCategoriaYMes(
             ListaEnlazada<Transaccion> historial,
             CategoriaGasto categoria,
             int anio,
             int mes) {
 
         YearMonth periodo = YearMonth.of(anio, mes);
-        double total = 0;
+        BigDecimal total = Dinero.CERO;
 
         for (Transaccion transaccion : historial) {
 
@@ -133,7 +134,7 @@ public class AnalisisGastosService {
                 );
 
                 if (fechaTransaccion.equals(periodo)) {
-                    total += transaccion.getMonto();
+                    total = total.add(transaccion.getMonto());
                 }
             }
         }
@@ -142,7 +143,7 @@ public class AnalisisGastosService {
     }
 
     // Calcula gastos entre dos fechas, incluyendo ambos dias
-    public double calcularGastosEntreFechas(
+    public BigDecimal calcularGastosEntreFechas(
             ListaEnlazada<Transaccion> historial,
             LocalDate fechaInicio,
             LocalDate fechaFin) {
@@ -155,7 +156,7 @@ public class AnalisisGastosService {
             );
         }
 
-        double total = 0;
+        BigDecimal total = Dinero.CERO;
 
         for (Transaccion transaccion : historial) {
 
@@ -172,7 +173,7 @@ public class AnalisisGastosService {
                     !fecha.isAfter(fechaFin);
 
                 if (despuesDelInicio && antesDelFin) {
-                    total += transaccion.getMonto();
+                    total = total.add(transaccion.getMonto());
                 }
             }
         }

@@ -5,6 +5,7 @@ import co.edu.uniquindio.poo.modelo.enums.EstadoTransaccion;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 import co.edu.uniquindio.poo.util.Dinero;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -24,8 +25,8 @@ public class Transaccion {
 
     private final String id;
     private final TipoTransaccion tipo;
-    private final double monto;
-    private final double comision;
+    private final BigDecimal monto;
+    private final BigDecimal comision;
     private final LocalDateTime fecha;
     private final String clienteOrigenId;
     private final String monederoOrigenId;
@@ -53,13 +54,13 @@ public class Transaccion {
         this.programadaId = b.programadaId;
     }
 
-    public static Builder builder(String id, TipoTransaccion tipo, double monto, LocalDateTime fecha) {
+    public static Builder builder(String id, TipoTransaccion tipo, BigDecimal monto, LocalDateTime fecha) {
         return new Builder(id, tipo, monto, fecha);
     }
 
     /** Lo que efectivamente sale del monedero de origen (monto + comisión). */
-    public double getTotalDebitado() {
-        return Dinero.redondear(monto + comision);
+    public BigDecimal getTotalDebitado() {
+        return Dinero.redondear(monto.add(comision));
     }
 
     /** ¿La transacción involucra al cliente (como origen o destino)? */
@@ -71,11 +72,11 @@ public class Transaccion {
      * Efecto de esta transacción sobre el saldo de un monedero (positivo = entra dinero).
      * Usado por la verificación recursiva de integridad para reconstruir saldos.
      */
-    public double efectoSobre(String monederoId) {
-        if (estado != EstadoTransaccion.COMPLETADA) return 0;
-        double efecto = 0;
-        if (monederoId.equals(monederoOrigenId)) efecto -= getTotalDebitado();
-        if (monederoId.equals(monederoDestinoId)) efecto += monto;
+    public BigDecimal efectoSobre(String monederoId) {
+        BigDecimal efecto = Dinero.CERO;
+        if (estado != EstadoTransaccion.COMPLETADA) return efecto;
+        if (monederoId.equals(monederoOrigenId)) efecto = efecto.subtract(getTotalDebitado());
+        if (monederoId.equals(monederoDestinoId)) efecto = efecto.add(monto);
         return efecto;
     }
 
@@ -96,8 +97,8 @@ public class Transaccion {
 
     public String getId() { return id; }
     public TipoTransaccion getTipo() { return tipo; }
-    public double getMonto() { return monto; }
-    public double getComision() { return comision; }
+    public BigDecimal getMonto() { return monto; }
+    public BigDecimal getComision() { return comision; }
     public LocalDateTime getFecha() { return fecha; }
     public String getClienteOrigenId() { return clienteOrigenId; }
     public String getMonederoOrigenId() { return monederoOrigenId; }
@@ -134,9 +135,9 @@ public class Transaccion {
     public static class Builder {
         private final String id;
         private final TipoTransaccion tipo;
-        private final double monto;
+        private final BigDecimal monto;
         private final LocalDateTime fecha;
-        private double comision;
+        private BigDecimal comision = Dinero.CERO;
         private String clienteOrigenId;
         private String monederoOrigenId;
         private String clienteDestinoId;
@@ -145,14 +146,14 @@ public class Transaccion {
         private String descripcion;
         private String programadaId;
 
-        private Builder(String id, TipoTransaccion tipo, double monto, LocalDateTime fecha) {
+        private Builder(String id, TipoTransaccion tipo, BigDecimal monto, LocalDateTime fecha) {
             this.id = id;
             this.tipo = tipo;
             this.monto = monto;
             this.fecha = fecha;
         }
 
-        public Builder comision(double comision) { this.comision = comision; return this; }
+        public Builder comision(BigDecimal comision) { this.comision = comision; return this; }
 
         public Builder origen(String clienteId, String monederoId) {
             this.clienteOrigenId = clienteId;

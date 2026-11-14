@@ -4,6 +4,7 @@ package co.edu.uniquindio.poo.servicios;
 import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 import co.edu.uniquindio.poo.util.RelojSimulado;
+import co.edu.uniquindio.poo.util.Dinero;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class ProgramacionServiceTest {
                 TipoTransaccion.TRANSFERENCIA,
                 "C001", "M001",
                 "C002", "M002",
-                50000,
+                Dinero.de(50000),
                 LocalDateTime.of(2026, 11, 8, 10, 0),
                 "UNA_VEZ"
             );
@@ -55,7 +56,7 @@ public class ProgramacionServiceTest {
                 TipoTransaccion.TRANSFERENCIA,
                 "C001", "M001",
                 "C002", "M002",
-                30000,
+                Dinero.de(30000),
                 LocalDateTime.of(2026, 11, 8, 10, 0),
                 "UNA_VEZ"
             );
@@ -89,7 +90,7 @@ public class ProgramacionServiceTest {
                 TipoTransaccion.TRANSFERENCIA,
                 "C001", "M001",
                 "C002", "M002",
-                20000,
+                Dinero.de(20000),
                 LocalDateTime.of(2026, 11, 8, 10, 0),
                 "UNA_VEZ"
             );
@@ -119,7 +120,7 @@ void cancelarUnaTransaccionProgramada() {
             TipoTransaccion.TRANSFERENCIA,
             "C001", "M001",
             "C002", "M002",
-            10000,
+            Dinero.de(10000),
             LocalDateTime.of(2026, 11, 8, 10, 0),
             "UNA_VEZ"
         );
@@ -130,7 +131,7 @@ void cancelarUnaTransaccionProgramada() {
             TipoTransaccion.TRANSFERENCIA,
             "C001", "M001",
             "C002", "M002",
-            20000,
+            Dinero.de(20000),
             LocalDateTime.of(2026, 11, 12, 10, 0),
             "UNA_VEZ"
         );
