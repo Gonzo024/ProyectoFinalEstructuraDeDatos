@@ -5,194 +5,622 @@ import co.edu.uniquindio.poo.modelo.Cliente;
 import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.Notificacion;
 import co.edu.uniquindio.poo.modelo.Transaccion;
+import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
+
 import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
 import co.edu.uniquindio.poo.modelo.enums.TipoNotificacion;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
+
 import co.edu.uniquindio.poo.servicios.ClienteService;
 import co.edu.uniquindio.poo.servicios.NotificacionService;
+import co.edu.uniquindio.poo.servicios.ProcesadorProgramacionesService;
+import co.edu.uniquindio.poo.servicios.ProgramacionService;
+import co.edu.uniquindio.poo.servicios.ProgramacionNotificacionService;
 import co.edu.uniquindio.poo.servicios.ReporteGastosClienteService;
+
 import co.edu.uniquindio.poo.util.Dinero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class ModuloTresController {
 
-    // Servicios que utilizara nuestra interfaz.
-    private final RelojSimulado reloj = new RelojSimulado();
+    // SERVICIOS COMPARTIDOS
 
-    private final NotificacionService notificacionService =
-            new NotificacionService(reloj);
+    private final RelojSimulado reloj = new RelojSimulado();
 
     private final ClienteService clienteService =
             new ClienteService(reloj);
 
+    private final NotificacionService notificacionService =
+            new NotificacionService(reloj);
+
+    private final ProgramacionService programacionService =
+            new ProgramacionService(reloj);
+
+    private final ProgramacionNotificacionService
+            programacionNotificacionService =
+            new ProgramacionNotificacionService(
+                    programacionService,
+                    notificacionService
+            );
+
     private final ReporteGastosClienteService reporteService =
             new ReporteGastosClienteService(clienteService);
 
+    // DEMOSTRACION:
+    // El ejecutor devuelve false porque aun no existe
+    // un servicio que mueva dinero realmente.
+    private final ProcesadorProgramacionesService procesador =
+            new ProcesadorProgramacionesService(
+                    programacionService,
+                    notificacionService,
+                    programacion -> false
+            );
+
+    private final ObservableList<TransaccionProgramada>
+            programacionesVisibles =
+            FXCollections.observableArrayList();
+
     private boolean datosDemostracionCargados = false;
+    private int contadorProgramaciones = 0;
 
-    // -------------------------------------------------
+    private final DateTimeFormatter formatoFecha =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+    private Label lblRelojSimulado;
+
+    // CAMPOS DE PROGRAMACIONES
+
+    @FXML private TextField txtClienteProgramacion;
+    @FXML private TextField txtMonederoProgramacion;
+    @FXML private TextField txtMontoProgramacion;
+    @FXML private TextField txtClienteDestino;
+    @FXML private TextField txtMonederoDestino;
+    @FXML private TextField txtHoraProgramacion;
+
+    @FXML private DatePicker fechaProgramacion;
+
+    @FXML private ComboBox<TipoTransaccion> comboTipo;
+    @FXML private ComboBox<String> comboFrecuencia;
+
+    @FXML private Label lblEstadoProgramaciones;
+
+    @FXML private TableView<TransaccionProgramada> tablaProgramaciones;
+    @FXML private TableColumn<TransaccionProgramada, String> colProgId;
+    @FXML private TableColumn<TransaccionProgramada, String> colProgTipo;
+    @FXML private TableColumn<TransaccionProgramada, String> colProgMonto;
+    @FXML private TableColumn<TransaccionProgramada, String> colProgFecha;
+    @FXML private TableColumn<TransaccionProgramada, String> colProgFrecuencia;
+
     // CAMPOS DE NOTIFICACIONES
-    // -------------------------------------------------
 
-    @FXML
-    private TextField txtClienteNotificacion;
+    @FXML private TextField txtClienteNotificacion;
+    @FXML private TableView<Notificacion> tablaNotificaciones;
+    @FXML private TableColumn<Notificacion, String> columnaId;
+    @FXML private TableColumn<Notificacion, String> columnaTipo;
+    @FXML private TableColumn<Notificacion, String> columnaMensaje;
+    @FXML private TableColumn<Notificacion, String> columnaLeida;
+    @FXML private Label lblCantidadNoLeidas;
 
-    @FXML
-    private TableView<Notificacion> tablaNotificaciones;
-
-    @FXML
-    private TableColumn<Notificacion, String> columnaId;
-
-    @FXML
-    private TableColumn<Notificacion, String> columnaTipo;
-
-    @FXML
-    private TableColumn<Notificacion, String> columnaMensaje;
-
-    @FXML
-    private TableColumn<Notificacion, String> columnaLeida;
-
-    @FXML
-    private Label lblCantidadNoLeidas;
-
-    // -------------------------------------------------
     // CAMPOS DE ANALISIS DE GASTOS
-    // -------------------------------------------------
 
-    @FXML
-    private TextField txtClienteGastos;
+    @FXML private TextField txtClienteGastos;
+    @FXML private TextField txtAnioGastos;
+    @FXML private TextField txtMesGastos;
 
-    @FXML
-    private TextField txtAnioGastos;
+    @FXML private Label lblTotalGastos;
+    @FXML private Label lblCategoriaMayor;
+    @FXML private Label lblEstadoGastos;
 
-    @FXML
-    private TextField txtMesGastos;
+    @FXML private TableView<CategoriaGasto> tablaGastos;
+    @FXML private TableColumn<CategoriaGasto, String> columnaCategoriaGastos;
+    @FXML private TableColumn<CategoriaGasto, String> columnaTotalGastos;
 
-    @FXML
-    private Label lblTotalGastos;
+    private String clienteReporteActual;
+    private int anioReporteActual;
+    private int mesReporteActual;
 
-    @FXML
-    private Label lblCategoriaMayor;
-
-    @FXML
-    private Label lblEstadoGastos;
-
-    @FXML
-    private TableView<CategoriaGasto> tablaGastos;
-
-    @FXML
-    private TableColumn<CategoriaGasto, String> columnaCategoriaGastos;
-
-    @FXML
-    private TableColumn<CategoriaGasto, String> columnaTotalGastos;
-
-    // -------------------------------------------------
-    // INICIALIZACION DE LAS TABLAS
-    // -------------------------------------------------
+    // INICIALIZACION
 
     @FXML
     public void initialize() {
 
-        configurarTablaNotificaciones();
-        configurarTablaGastos();
+        configurarProgramaciones();
+        configurarNotificaciones();
+        configurarGastos();
 
         LocalDate hoy = reloj.hoy();
 
-        txtAnioGastos.setText(
-                String.valueOf(hoy.getYear())
-        );
+        txtAnioGastos.setText(String.valueOf(hoy.getYear()));
+        txtMesGastos.setText(String.valueOf(hoy.getMonthValue()));
 
-        txtMesGastos.setText(
-                String.valueOf(hoy.getMonthValue())
-        );
+        fechaProgramacion.setValue(hoy.plusDays(1));
+        txtHoraProgramacion.setText("10:00");
+
+        crearControlesSimulacion();
+        actualizarEstadoProgramaciones();
     }
 
-    private void configurarTablaNotificaciones() {
+    // -------------------------------------------------
+    // PROGRAMACIONES
+    // -------------------------------------------------
 
-        columnaId.setCellValueFactory(datos ->
+    private void configurarProgramaciones() {
+
+        comboTipo.setItems(FXCollections.observableArrayList(
+                TipoTransaccion.DEPOSITO,
+                TipoTransaccion.PAGO,
+                TipoTransaccion.TRANSFERENCIA,
+                TipoTransaccion.TRANSFERENCIA_INTERNA
+        ));
+
+        comboFrecuencia.setItems(FXCollections.observableArrayList(
+                "UNA_VEZ", "DIARIA", "SEMANAL", "MENSUAL"
+        ));
+
+        comboTipo.setValue(TipoTransaccion.PAGO);
+        comboFrecuencia.setValue("UNA_VEZ");
+
+        colProgId.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().getId()
-                )
-        );
+                        datos.getValue().getId()));
 
-        columnaTipo.setCellValueFactory(datos ->
+        colProgTipo.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().getTipo().toString()
-                )
-        );
+                        datos.getValue().getTipo().toString()));
 
-        columnaMensaje.setCellValueFactory(datos ->
+        colProgMonto.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().getMensaje()
-                )
-        );
+                        formatearDinero(datos.getValue().getMonto())));
 
-        columnaLeida.setCellValueFactory(datos ->
+        colProgFecha.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().isLeida() ? "Si" : "No"
-                )
-        );
+                        datos.getValue().getFechaProgramada()
+                                .format(formatoFecha)));
 
-        tablaNotificaciones.setPlaceholder(
-                new Label("No hay notificaciones para mostrar")
-        );
+        colProgFrecuencia.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getFrecuencia()));
+
+        tablaProgramaciones.setItems(programacionesVisibles);
+
+        tablaProgramaciones.setPlaceholder(
+                new Label("No hay programaciones registradas"));
     }
 
-    private void configurarTablaGastos() {
+    @FXML
+    private void crearProgramacion() {
 
-        columnaCategoriaGastos.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(
-                        datos.getValue().getNombre()
-                )
-        );
+        try {
 
-        columnaTotalGastos.setCellValueFactory(datos -> {
+            String clienteId =
+                    txtClienteProgramacion.getText().trim();
 
-            CategoriaGasto categoria = datos.getValue();
+            String monederoId =
+                    txtMonederoProgramacion.getText().trim();
 
-            String clienteId = txtClienteGastos
-                    .getText().trim();
+            if (clienteId.isEmpty() || monederoId.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Escribe el ID del cliente y del monedero");
+            }
 
-            int anio = Integer.parseInt(
-                    txtAnioGastos.getText().trim()
-            );
+            clienteService.obtenerCliente(clienteId);
 
-            int mes = Integer.parseInt(
-                    txtMesGastos.getText().trim()
-            );
+            Monedero monedero =
+                    clienteService.obtenerMonedero(monederoId);
 
-            BigDecimal total =
-                    reporteService.calcularCategoriaMensual(
-                            clienteId, categoria, anio, mes
+            if (!monedero.getClienteId().equals(clienteId)) {
+                throw new IllegalArgumentException(
+                        "El monedero no pertenece al cliente");
+            }
+
+            String textoMonto =
+                    txtMontoProgramacion.getText()
+                            .trim().replace(",", ".");
+
+            if (textoMonto.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Debes escribir un monto");
+            }
+
+            BigDecimal monto;
+
+            try {
+                monto = new BigDecimal(textoMonto);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "El monto debe ser un numero valido");
+            }
+
+            if (!Dinero.esPositivo(monto)) {
+                throw new IllegalArgumentException(
+                        "El monto debe ser mayor que cero");
+            }
+
+            monto = Dinero.redondear(monto);
+
+            LocalDate fecha = fechaProgramacion.getValue();
+
+            if (fecha == null) {
+                throw new IllegalArgumentException(
+                        "Selecciona una fecha");
+            }
+
+            LocalTime hora;
+
+            try {
+                hora = LocalTime.parse(
+                        txtHoraProgramacion.getText().trim());
+            } catch (DateTimeParseException error) {
+                throw new IllegalArgumentException(
+                        "La hora debe tener el formato HH:mm");
+            }
+
+            LocalDateTime fechaCompleta =
+                    LocalDateTime.of(fecha, hora);
+
+            if (!fechaCompleta.isAfter(reloj.ahora())) {
+                throw new IllegalArgumentException(
+                        "La fecha y hora deben ser futuras");
+            }
+
+            TipoTransaccion tipo = comboTipo.getValue();
+            String frecuencia = comboFrecuencia.getValue();
+
+            if (tipo == null || frecuencia == null) {
+                throw new IllegalArgumentException(
+                        "Selecciona el tipo y la frecuencia");
+            }
+
+            String clienteOrigen = clienteId;
+            String monederoOrigen = monederoId;
+
+            String clienteDestino = null;
+            String monederoDestino = null;
+
+            if (tipo == TipoTransaccion.DEPOSITO) {
+
+                monederoOrigen = null;
+                clienteDestino = clienteId;
+                monederoDestino = monederoId;
+
+            } else if (tipo == TipoTransaccion.TRANSFERENCIA
+                    || tipo == TipoTransaccion.TRANSFERENCIA_INTERNA) {
+
+                clienteDestino =
+                        txtClienteDestino.getText().trim();
+
+                monederoDestino =
+                        txtMonederoDestino.getText().trim();
+
+                if (clienteDestino.isEmpty()
+                        || monederoDestino.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Indica cliente y monedero destino");
+                }
+
+                clienteService.obtenerCliente(clienteDestino);
+
+                Monedero destino =
+                        clienteService.obtenerMonedero(monederoDestino);
+
+                if (!destino.getClienteId().equals(clienteDestino)) {
+                    throw new IllegalArgumentException(
+                            "El monedero destino no pertenece al cliente destino");
+                }
+
+                if (monederoDestino.equals(monederoId)) {
+                    throw new IllegalArgumentException(
+                            "El origen y destino deben ser diferentes");
+                }
+
+                if (tipo == TipoTransaccion.TRANSFERENCIA_INTERNA
+                        && !clienteDestino.equals(clienteId)) {
+                    throw new IllegalArgumentException(
+                            "La transferencia interna debe ser del mismo cliente");
+                }
+
+                if (tipo == TipoTransaccion.TRANSFERENCIA
+                        && clienteDestino.equals(clienteId)) {
+                    throw new IllegalArgumentException(
+                            "Usa transferencia interna para el mismo cliente");
+                }
+            }
+
+            String id = "P" + (contadorProgramaciones + 1);
+
+            TransaccionProgramada nueva =
+                    new TransaccionProgramada(
+                            id,
+                            tipo,
+                            clienteOrigen,
+                            monederoOrigen,
+                            clienteDestino,
+                            monederoDestino,
+                            monto,
+                            fechaCompleta,
+                            frecuencia
                     );
 
-            return new ReadOnlyStringWrapper(
-                    formatearDinero(total)
-            );
-        });
+            programacionNotificacionService.programarYNotificar(nueva);
 
-        tablaGastos.setPlaceholder(
-                new Label("Consulta los gastos para ver resultados")
+            contadorProgramaciones++;
+
+            programacionesVisibles.add(nueva);
+            programacionesVisibles.sort(
+                    TransaccionProgramada::compareTo);
+
+            actualizarEstadoProgramaciones();
+            actualizarNotificacionesSiCorresponde(clienteId);
+
+            mostrarMensaje(
+                    "Programacion creada",
+                    "Se registro " + id
+                            + " para el "
+                            + fechaCompleta.format(formatoFecha)
+                            + ". Se genero una notificacion. "
+                            + "El dinero aun no se ha movido.");
+
+        } catch (RuntimeException error) {
+
+            mostrarMensaje(
+                    "No se pudo programar",
+                    mensajeError(error));
+        }
+    }
+
+    @FXML
+    private void cancelarProgramacion() {
+
+        TransaccionProgramada seleccionada =
+                tablaProgramaciones.getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionada == null) {
+            mostrarMensaje(
+                    "Seleccion",
+                    "Selecciona una programacion de la tabla");
+            return;
+        }
+
+        boolean cancelada =
+                programacionNotificacionService.cancelarYNotificar(
+                        seleccionada.getId());
+
+        if (cancelada) {
+
+            programacionesVisibles.remove(seleccionada);
+            actualizarEstadoProgramaciones();
+
+            actualizarNotificacionesSiCorresponde(
+                    seleccionada.getClienteOrigenId());
+
+            mostrarMensaje(
+                    "Programacion cancelada",
+                    "Se cancelo " + seleccionada.getId()
+                            + " y se genero una notificacion.");
+
+        } else {
+
+            mostrarMensaje(
+                    "Error",
+                    "La programacion ya no esta pendiente");
+        }
+    }
+
+    @FXML
+    private void consultarSiguienteProgramacion() {
+
+        TransaccionProgramada siguiente =
+                programacionService.consultarSiguiente();
+
+        if (siguiente == null) {
+            mostrarMensaje(
+                    "Sin programaciones",
+                    "No hay operaciones pendientes");
+            return;
+        }
+
+        tablaProgramaciones.getSelectionModel().select(siguiente);
+        tablaProgramaciones.scrollTo(siguiente);
+
+        mostrarMensaje(
+                "Proxima programacion",
+                siguiente.getId() + " - "
+                        + siguiente.getFechaProgramada()
+                                .format(formatoFecha));
+    }
+
+    // -------------------------------------------------
+    // SIMULACION DE VENCIMIENTOS - COMMIT 20
+    // -------------------------------------------------
+
+    private void crearControlesSimulacion() {
+
+        // Colocamos los nuevos botones encima de la tabla.
+        VBox panel = (VBox) tablaProgramaciones.getParent();
+
+        Label titulo = new Label(
+                "Prueba de vencimientos (sin dinero real)"
+        );
+
+        titulo.setStyle(
+                "-fx-font-weight: bold; -fx-font-size: 14px;"
+        );
+
+        lblRelojSimulado = new Label();
+
+        Button btnAvanzar = new Button(
+                "Avanzar al siguiente vencimiento"
+        );
+
+        Button btnProcesar = new Button(
+                "Procesar vencidas (prueba)"
+        );
+
+        btnAvanzar.setOnAction(evento ->
+                avanzarRelojAlSiguienteVencimiento());
+
+        btnProcesar.setOnAction(evento ->
+                procesarVencimientosDePrueba());
+
+        HBox botones = new HBox(
+                10,
+                btnAvanzar,
+                btnProcesar
+        );
+
+        Label advertencia = new Label(
+                "Prueba sin movimientos financieros. "
+                        + "Las operaciones se marcaran como no ejecutadas."
+        );
+
+        advertencia.setWrapText(true);
+        advertencia.setStyle(
+                "-fx-text-fill: #777777; -fx-font-size: 12px;"
+        );
+
+        int posicion =
+                panel.getChildren().indexOf(tablaProgramaciones);
+
+        panel.getChildren().add(posicion++, titulo);
+        panel.getChildren().add(posicion++, lblRelojSimulado);
+        panel.getChildren().add(posicion++, botones);
+        panel.getChildren().add(posicion, advertencia);
+
+        actualizarRelojVisual();
+    }
+
+    private void avanzarRelojAlSiguienteVencimiento() {
+
+        TransaccionProgramada siguiente =
+                programacionService.consultarSiguiente();
+
+        if (siguiente == null) {
+
+            mostrarMensaje(
+                    "Sin programaciones",
+                    "Primero debes crear una programacion."
+            );
+            return;
+        }
+
+        LocalDateTime fecha =
+                siguiente.getFechaProgramada();
+
+        // Solo avanzamos el reloj, nunca retrocedemos.
+        if (fecha.isAfter(reloj.ahora())) {
+            reloj.fijar(fecha);
+        }
+
+        actualizarRelojVisual();
+
+        mostrarMensaje(
+                "Reloj actualizado",
+                "El reloj simulado ahora marca "
+                        + reloj.ahora().format(formatoFecha)
+                        + ". Ya puedes procesar las vencidas."
+        );
+    }
+
+    private void procesarVencimientosDePrueba() {
+
+        if (!programacionService.hayTransaccionesVencidas()) {
+
+            mostrarMensaje(
+                    "Sin vencimientos",
+                    "No hay operaciones vencidas. "
+                            + "Puedes avanzar el reloj simulado."
+            );
+            return;
+        }
+
+        // El procesador usa un ejecutor que devuelve false:
+        // ninguna operacion de dinero se realiza realmente.
+        int procesadas = procesador.procesarVencidas();
+
+        // Al fallar, el procesador desactiva las programaciones.
+        programacionesVisibles.removeIf(
+                programacion -> !programacion.isActiva()
+        );
+
+        tablaProgramaciones.refresh();
+
+        actualizarEstadoProgramaciones();
+        actualizarRelojVisual();
+
+        String clienteConsultado =
+                txtClienteNotificacion.getText().trim();
+
+        if (!clienteConsultado.isEmpty()) {
+            actualizarTablaNotificaciones(clienteConsultado);
+        }
+
+        mostrarMensaje(
+                "Prueba completada",
+                "Se revisaron " + procesadas
+                        + " programaciones vencidas. "
+                        + "No se realizaron movimientos financieros. "
+                        + "Consulta Notificaciones para ver los avisos."
+        );
+    }
+
+    private void actualizarRelojVisual() {
+
+        lblRelojSimulado.setText(
+                "Fecha simulada: "
+                        + reloj.ahora().format(formatoFecha)
+        );
+    }
+
+    private void actualizarEstadoProgramaciones() {
+
+        lblEstadoProgramaciones.setText(
+                "Programaciones pendientes: "
+                        + programacionService.cantidadPendientes()
         );
     }
 
     // -------------------------------------------------
     // NOTIFICACIONES
     // -------------------------------------------------
+
+    private void configurarNotificaciones() {
+
+        columnaId.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getId()));
+
+        columnaTipo.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getTipo().toString()));
+
+        columnaMensaje.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getMensaje()));
+
+        columnaLeida.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().isLeida() ? "Si" : "No"));
+
+        tablaNotificaciones.setPlaceholder(
+                new Label("No hay notificaciones para mostrar"));
+    }
 
     @FXML
     private void consultarNotificaciones() {
@@ -203,8 +631,7 @@ public class ModuloTresController {
         if (clienteId.isEmpty()) {
             mostrarMensaje(
                     "Validacion",
-                    "Debes escribir el ID del cliente"
-            );
+                    "Debes escribir el ID del cliente");
             return;
         }
 
@@ -221,24 +648,21 @@ public class ModuloTresController {
         if (clienteId.isEmpty()) {
             mostrarMensaje(
                     "Validacion",
-                    "Debes escribir el ID del cliente"
-            );
+                    "Debes escribir el ID del cliente");
             return;
         }
 
         notificacionService.crearNotificacion(
                 clienteId,
                 TipoNotificacion.TRANSACCION,
-                "Esta es una notificacion de prueba"
-        );
+                "Esta es una notificacion de prueba");
 
         notificacionService.entregarNotificaciones();
         actualizarTablaNotificaciones(clienteId);
 
         mostrarMensaje(
                 "Notificacion creada",
-                "Se creo una notificacion para " + clienteId
-        );
+                "Se creo una notificacion para " + clienteId);
     }
 
     @FXML
@@ -254,53 +678,46 @@ public class ModuloTresController {
         if (seleccionada == null) {
             mostrarMensaje(
                     "Seleccion",
-                    "Primero selecciona una notificacion"
-            );
+                    "Primero selecciona una notificacion");
             return;
         }
 
         if (!seleccionada.getClienteId().equals(clienteId)) {
             mostrarMensaje(
                     "Validacion",
-                    "Consulta primero las notificaciones del cliente"
-            );
+                    "Consulta primero las notificaciones del cliente");
             return;
         }
 
         boolean marcada =
                 notificacionService.marcarComoLeida(
-                        seleccionada.getId()
-                );
+                        seleccionada.getId());
 
         if (marcada) {
 
             actualizarTablaNotificaciones(clienteId);
-            tablaNotificaciones.refresh();
 
             mostrarMensaje(
                     "Correcto",
-                    "Notificacion marcada como leida"
-            );
+                    "Notificacion marcada como leida");
 
         } else {
 
             mostrarMensaje(
                     "Error",
-                    "No se encontro la notificacion"
-            );
+                    "No se encontro la notificacion");
         }
     }
 
     private void actualizarTablaNotificaciones(
             String clienteId) {
 
-        var lista = FXCollections
-                .<Notificacion>observableArrayList();
+        ObservableList<Notificacion> lista =
+                FXCollections.observableArrayList();
 
         for (Notificacion notificacion :
                 notificacionService.consultarNotificaciones(
-                        clienteId
-                )) {
+                        clienteId)) {
 
             lista.add(notificacion);
         }
@@ -316,9 +733,47 @@ public class ModuloTresController {
         );
     }
 
+    private void actualizarNotificacionesSiCorresponde(
+            String clienteId) {
+
+        String clienteConsultado =
+                txtClienteNotificacion.getText().trim();
+
+        if (clienteId.equals(clienteConsultado)) {
+            actualizarTablaNotificaciones(clienteId);
+        }
+    }
+
     // -------------------------------------------------
     // ANALISIS DE GASTOS
     // -------------------------------------------------
+
+    private void configurarGastos() {
+
+        columnaCategoriaGastos.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getNombre()));
+
+        columnaTotalGastos.setCellValueFactory(datos -> {
+
+            if (clienteReporteActual == null) {
+                return new ReadOnlyStringWrapper("$0.00");
+            }
+
+            BigDecimal total =
+                    reporteService.calcularCategoriaMensual(
+                            clienteReporteActual,
+                            datos.getValue(),
+                            anioReporteActual,
+                            mesReporteActual);
+
+            return new ReadOnlyStringWrapper(
+                    formatearDinero(total));
+        });
+
+        tablaGastos.setPlaceholder(
+                new Label("Consulta los gastos para ver resultados"));
+    }
 
     @FXML
     private void consultarGastos() {
@@ -326,113 +781,91 @@ public class ModuloTresController {
         String clienteId =
                 txtClienteGastos.getText().trim();
 
-        if (clienteId.isEmpty()) {
-            limpiarReporte();
-            mostrarMensaje(
-                    "Validacion",
-                    "Debes escribir el ID del cliente"
-            );
-            return;
-        }
-
-        int anio;
-        int mes;
-
         try {
 
-            anio = Integer.parseInt(
-                    txtAnioGastos.getText().trim()
-            );
+            if (clienteId.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Debes escribir el ID del cliente");
+            }
 
-            mes = Integer.parseInt(
-                    txtMesGastos.getText().trim()
-            );
+            int anio;
+            int mes;
 
-        } catch (NumberFormatException error) {
+            try {
 
-            limpiarReporte();
-            mostrarMensaje(
-                    "Validacion",
-                    "El año y el mes deben ser numeros enteros"
-            );
-            return;
-        }
+                anio = Integer.parseInt(
+                        txtAnioGastos.getText().trim());
 
-        if (anio < 1 || anio > 9999 || mes < 1 || mes > 12) {
+                mes = Integer.parseInt(
+                        txtMesGastos.getText().trim());
 
-            limpiarReporte();
-            mostrarMensaje(
-                    "Validacion",
-                    "Ingresa un año valido y un mes entre 1 y 12"
-            );
-            return;
-        }
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "El anio y el mes deben ser numeros enteros");
+            }
 
-        try {
+            if (anio < 1 || anio > 9999
+                    || mes < 1 || mes > 12) {
+                throw new IllegalArgumentException(
+                        "Ingresa un anio valido y un mes entre 1 y 12");
+            }
 
-            // Comprueba que el cliente realmente exista.
             clienteService.obtenerCliente(clienteId);
 
             BigDecimal total =
                     reporteService.calcularTotalMensual(
-                            clienteId, anio, mes
-                    );
+                            clienteId, anio, mes);
 
-            lblTotalGastos.setText(
-                    "Total gastado: " + formatearDinero(total)
-            );
-
-            var categorias = FXCollections
-                    .<CategoriaGasto>observableArrayList();
-
-            BigDecimal mayorMonto = Dinero.CERO;
             CategoriaGasto categoriaMayor = null;
+            BigDecimal mayorMonto = Dinero.CERO;
+
+            ObservableList<CategoriaGasto> categorias =
+                    FXCollections.observableArrayList();
 
             for (CategoriaGasto categoria :
                     CategoriaGasto.values()) {
 
-                BigDecimal gastoCategoria =
+                BigDecimal gasto =
                         reporteService.calcularCategoriaMensual(
-                                clienteId,
-                                categoria,
-                                anio,
-                                mes
-                        );
+                                clienteId, categoria, anio, mes);
 
-                if (gastoCategoria.signum() > 0) {
+                if (gasto.signum() > 0) {
 
                     categorias.add(categoria);
 
-                    if (gastoCategoria.compareTo(mayorMonto) > 0) {
-                        mayorMonto = gastoCategoria;
+                    if (gasto.compareTo(mayorMonto) > 0) {
+                        mayorMonto = gasto;
                         categoriaMayor = categoria;
                     }
                 }
             }
 
+            clienteReporteActual = clienteId;
+            anioReporteActual = anio;
+            mesReporteActual = mes;
+
             tablaGastos.setItems(categorias);
             tablaGastos.refresh();
+
+            lblTotalGastos.setText(
+                    "Total gastado: " + formatearDinero(total));
 
             if (categoriaMayor == null) {
 
                 lblCategoriaMayor.setText(
-                        "Categoria con mayor gasto: Ninguna"
-                );
+                        "Categoria con mayor gasto: Ninguna");
 
                 lblEstadoGastos.setText(
-                        "No se encontraron gastos para este periodo"
-                );
+                        "No se encontraron gastos para este periodo");
 
             } else {
 
                 lblCategoriaMayor.setText(
                         "Categoria con mayor gasto: "
-                                + categoriaMayor.getNombre()
-                );
+                                + categoriaMayor.getNombre());
 
                 lblEstadoGastos.setText(
-                        "Reporte generado para " + clienteId
-                );
+                        "Reporte generado para " + clienteId);
             }
 
         } catch (RuntimeException error) {
@@ -441,32 +874,25 @@ public class ModuloTresController {
 
             mostrarMensaje(
                     "Error al consultar",
-                    error.getMessage() == null
-                            ? "No fue posible consultar los gastos"
-                            : error.getMessage()
-            );
+                    mensajeError(error));
         }
     }
 
     private void limpiarReporte() {
 
+        clienteReporteActual = null;
         tablaGastos.getItems().clear();
 
-        lblTotalGastos.setText(
-                "Total gastado: $0.00"
-        );
+        lblTotalGastos.setText("Total gastado: $0.00");
 
         lblCategoriaMayor.setText(
-                "Categoria con mayor gasto: Ninguna"
-        );
+                "Categoria con mayor gasto: Ninguna");
 
-        lblEstadoGastos.setText(
-                "Sin consulta"
-        );
+        lblEstadoGastos.setText("Sin consulta");
     }
 
     // -------------------------------------------------
-    // DATOS PARA DEMOSTRAR EL FUNCIONAMIENTO
+    // DATOS DE DEMOSTRACION
     // -------------------------------------------------
 
     @FXML
@@ -479,88 +905,65 @@ public class ModuloTresController {
 
             mostrarMensaje(
                     "Datos de prueba",
-                    "Los datos ya estaban cargados"
-            );
+                    "Los datos ya estaban cargados");
             return;
         }
 
-        // Crea un cliente mediante el servicio real.
         Cliente cliente = clienteService.registrarCliente(
                 "Cliente demostracion",
                 "demo@monedero.local",
-                "1234"
-        );
+                "1234");
 
-        // El servicio crea automaticamente el monedero principal.
         Monedero principal =
                 clienteService.monederosDe(
-                        cliente.getId()
-                ).obtenerValorNodo(0);
+                        cliente.getId()).obtenerValorNodo(0);
 
         Monedero ahorros = clienteService.crearMonedero(
                 cliente.getId(),
                 "Ahorros",
-                TipoMonedero.AHORROS
-        );
+                TipoMonedero.AHORROS);
 
-        // Utilizamos fechas del mes actual.
-        LocalDateTime fecha1 =
-                reloj.ahora().minusDays(3);
+        LocalDateTime fecha1 = reloj.ahora().minusDays(3);
+        LocalDateTime fecha2 = reloj.ahora().minusDays(2);
+        LocalDateTime fecha3 = reloj.ahora().minusDays(1);
 
-        LocalDateTime fecha2 =
-                reloj.ahora().minusDays(2);
-
-        LocalDateTime fecha3 =
-                reloj.ahora().minusDays(1);
-
-        // Pago de alimentacion: $80.000
         Transaccion pago1 = Transaccion.builder(
                 "DEMO-T1",
                 TipoTransaccion.PAGO,
                 Dinero.de(80000),
-                fecha1
-        )
+                fecha1)
                 .origen(cliente.getId(), principal.getId())
                 .categoria(CategoriaGasto.ALIMENTACION)
                 .construir();
 
-        // Pago de transporte: $20.000
         Transaccion pago2 = Transaccion.builder(
                 "DEMO-T2",
                 TipoTransaccion.PAGO,
                 Dinero.de(20000),
-                fecha2
-        )
+                fecha2)
                 .origen(cliente.getId(), principal.getId())
                 .categoria(CategoriaGasto.TRANSPORTE)
                 .construir();
 
-        // Pago de alimentacion desde otro monedero: $30.000
         Transaccion pago3 = Transaccion.builder(
                 "DEMO-T3",
                 TipoTransaccion.PAGO,
                 Dinero.de(30000),
-                fecha3
-        )
+                fecha3)
                 .origen(cliente.getId(), ahorros.getId())
                 .categoria(CategoriaGasto.ALIMENTACION)
                 .construir();
 
-        // Deposito: no debe contarse como gasto.
         Transaccion deposito = Transaccion.builder(
                 "DEMO-T4",
                 TipoTransaccion.DEPOSITO,
                 Dinero.de(100000),
-                fecha3
-        )
+                fecha3)
                 .destino(cliente.getId(), ahorros.getId())
                 .construir();
 
-        // Solo agregamos movimientos de prueba al historial.
-        // No modificamos saldos ni ejecutamos operaciones reales.
         principal.getHistorial().agregarFinal(pago1);
         principal.getHistorial().agregarFinal(pago2);
-
         ahorros.getHistorial().agregarFinal(pago3);
         ahorros.getHistorial().agregarFinal(deposito);
 
@@ -568,19 +971,22 @@ public class ModuloTresController {
 
         txtClienteGastos.setText(cliente.getId());
         txtAnioGastos.setText(
-                String.valueOf(reloj.hoy().getYear())
-        );
+                String.valueOf(reloj.hoy().getYear()));
         txtMesGastos.setText(
-                String.valueOf(reloj.hoy().getMonthValue())
-        );
+                String.valueOf(reloj.hoy().getMonthValue()));
+
+        txtClienteProgramacion.setText(cliente.getId());
+        txtMonederoProgramacion.setText(principal.getId());
 
         consultarGastos();
 
         mostrarMensaje(
                 "Datos cargados",
-                "Se crearon movimientos de demostracion "
-                        + "para el cliente " + cliente.getId()
-        );
+                "Cliente " + cliente.getId()
+                        + " creado. Monederos: "
+                        + principal.getId() + " y "
+                        + ahorros.getId()
+                        + ". Puedes usarlos en Programaciones.");
     }
 
     // -------------------------------------------------
@@ -588,21 +994,42 @@ public class ModuloTresController {
     // -------------------------------------------------
 
     private String formatearDinero(BigDecimal monto) {
-
         return "$" + monto.setScale(2).toPlainString();
+    }
+
+    private String mensajeError(RuntimeException error) {
+
+        if (error instanceof NumberFormatException) {
+            return "Debes ingresar un numero valido";
+        }
+
+        if (error instanceof DateTimeParseException) {
+            return "La hora debe tener el formato HH:mm";
+        }
+
+        if (error instanceof IllegalArgumentException
+                && error.getMessage() != null) {
+            return error.getMessage();
+        }
+
+        return "No fue posible completar la operacion";
     }
 
     private void mostrarMensaje(
             String titulo,
             String mensaje) {
 
+        ButtonType aceptar = new ButtonType(
+                "Aceptar",
+                ButtonBar.ButtonData.OK_DONE);
+
         Alert alerta = new Alert(
-                Alert.AlertType.INFORMATION
-        );
+                Alert.AlertType.INFORMATION,
+                mensaje,
+                aceptar);
 
         alerta.setTitle(titulo);
         alerta.setHeaderText(null);
-        alerta.setContentText(mensaje);
         alerta.showAndWait();
     }
 }
