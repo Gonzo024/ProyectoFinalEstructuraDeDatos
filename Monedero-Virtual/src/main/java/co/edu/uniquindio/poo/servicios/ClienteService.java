@@ -1,5 +1,6 @@
 package co.edu.uniquindio.poo.servicios;
 
+import co.edu.uniquindio.poo.estructuras.hash.TablaHash;
 import co.edu.uniquindio.poo.estructuras.lista.ListaEnlazada;
 import co.edu.uniquindio.poo.excepciones.MonederoException;
 import co.edu.uniquindio.poo.modelo.Cliente;
@@ -11,11 +12,29 @@ import co.edu.uniquindio.poo.util.RelojSimulado;
 
 import java.math.BigDecimal;
 
+/**
+ * Registro de clientes y de sus monederos
+ * Optimización con tablas hash: antes cada búsqueda recorría una lista completa (O(n)).
+ * Ahora se busca directamente por la clave en una TablaHash (O(1) en promedio):
+
+ *   clientesPorId: "C1" → Cliente</li>
+ *   clientesPorCorreo: "ana@correo.com" → Cliente (para no repetir correos)
+ *   monederosPorId: "M1" → Monedero
+ *   monederosPorCliente: "C1" → lista de sus monederos (máximo 5)
+
+ * La lista "clientes" se mantiene solo para poder mostrarlos en el orden en que se registraron.
+ */
 public class ClienteService {
 
     private final RelojSimulado reloj;
+
     private final ListaEnlazada<Cliente> clientes = new ListaEnlazada<Cliente>();
-    private final ListaEnlazada<Monedero> monederos = new ListaEnlazada<Monedero>();
+    private final TablaHash<String, Cliente> clientesPorId = new TablaHash<String, Cliente>();
+    private final TablaHash<String, Cliente> clientesPorCorreo = new TablaHash<String, Cliente>();
+    private final TablaHash<String, Monedero> monederosPorId = new TablaHash<String, Monedero>();
+    private final TablaHash<String, ListaEnlazada<Monedero>> monederosPorCliente =
+            new TablaHash<String, ListaEnlazada<Monedero>>();
+
     private int contadorClientes = 0;
     private int contadorMonederos = 0;
 
@@ -23,6 +42,9 @@ public class ClienteService {
         this.reloj = reloj;
     }
 
+    // clientes
+
+    /** Registra un cliente y le crea el monedero Principal. O(1) en promedio. */
     public Cliente registrarCliente(String nombre, String correo, String pin) {
         if (nombre == null || nombre.isBlank()) {
             throw new MonederoException("El nombre es obligatorio");
@@ -33,72 +55,86 @@ public class ClienteService {
         if (pin == null || pin.isBlank()) {
             throw new MonederoException("El PIN es obligatorio");
         }
-        for (Cliente existente : clientes) {
-            if (existente.getCorreo().equalsIgnoreCase(correo.trim())) {
-                throw new MonederoException("Ya existe un cliente con ese correo");
-            }
+
+        // El correo se guarda en minúscula para que "ANA@correo.com" y "ana@correo.com" cuenten igual.
+        String correoClave = correo.trim().toLowerCase();
+        if (clientesPorCorreo.contieneClave(correoClave)) {
+            throw new MonederoException("Ya existe un cliente con ese correo");
         }
+
         contadorClientes++;
         Cliente cliente = new Cliente("C" + contadorClientes, nombre.trim(), correo.trim(), pin, reloj.ahora());
+
         clientes.agregarFinal(cliente);
+        clientesPorId.insertar(cliente.getId(), cliente);
+        clientesPorCorreo.insertar(correoClave, cliente);
+        monederosPorCliente.insertar(cliente.getId(), new ListaEnlazada<Monedero>());
+
         crearMonedero(cliente.getId(), "Principal", TipoMonedero.PRINCIPAL);
         return cliente;
     }
 
+    /** Busca un cliente por su ID. O(1) en promedio (antes O(n)). */
     public Cliente obtenerCliente(String id) {
-        for (Cliente cliente : clientes) {
-            if (cliente.getId().equals(id)) {
-                return cliente;
-            }
+        Cliente cliente = clientesPorId.obtener(id);
+        if (cliente == null) {
+            throw new MonederoException("Cliente no encontrado: " + id);
         }
-        throw new MonederoException("Cliente no encontrado: " + id);
+        return cliente;
     }
 
+    /** Todos los clientes en el orden en que se registraron. */
     public ListaEnlazada<Cliente> listarClientes() {
         return clientes;
     }
 
+    //  monederos
+
+    /** Crea un monedero para el cliente. O(1) en promedio (solo recorre sus máximo 5 monederos). */
     public Monedero crearMonedero(String clienteId, String nombre, TipoMonedero tipo) {
         obtenerCliente(clienteId);
         if (nombre == null || nombre.isBlank()) {
             throw new MonederoException("El nombre del monedero es obligatorio");
         }
-        int cantidad = 0;
-        for (Monedero existente : monederos) {
-            if (existente.getClienteId().equals(clienteId)) {
-                cantidad++;
-                if (existente.getNombre().equalsIgnoreCase(nombre.trim())) {
-                    throw new MonederoException("El cliente ya tiene un monedero con ese nombre");
-                }
-            }
-        }
-        if (cantidad >= Constantes.MAX_MONEDEROS) {
+
+        ListaEnlazada<Monedero> delCliente = monederosPorCliente.obtener(clienteId);
+        if (delCliente.getTamano() >= Constantes.MAX_MONEDEROS) {
             throw new MonederoException("Maximo de monederos por cliente: " + Constantes.MAX_MONEDEROS);
         }
+        for (Monedero existente : delCliente) {
+            if (existente.getNombre().equalsIgnoreCase(nombre.trim())) {
+                throw new MonederoException("El cliente ya tiene un monedero con ese nombre");
+            }
+        }
+
         contadorMonederos++;
         Monedero monedero = new Monedero("M" + contadorMonederos, clienteId, nombre.trim(), tipo);
-        monederos.agregarFinal(monedero);
+
+        monederosPorId.insertar(monedero.getId(), monedero);
+        delCliente.agregarFinal(monedero);
         return monedero;
     }
 
+    /** Busca un monedero por su ID. O(1) en promedio (antes O(n)). Es el método más usado del sistema. */
     public Monedero obtenerMonedero(String id) {
-        for (Monedero monedero : monederos) {
-            if (monedero.getId().equals(id)) {
-                return monedero;
-            }
+        Monedero monedero = monederosPorId.obtener(id);
+        if (monedero == null) {
+            throw new MonederoException("Monedero no encontrado: " + id);
         }
-        throw new MonederoException("Monedero no encontrado: " + id);
+        return monedero;
     }
 
+    /**
+     * Monederos de un cliente. O(1) en promedio para encontrarlos (antes recorría TODOS los monederos).
+     * Se devuelve una copia para que quien la reciba no pueda dañar la lista interna.
+     */
     public ListaEnlazada<Monedero> monederosDe(String clienteId) {
         obtenerCliente(clienteId);
-        ListaEnlazada<Monedero> resultado = new ListaEnlazada<Monedero>();
-        for (Monedero monedero : monederos) {
-            if (monedero.getClienteId().equals(clienteId)) {
-                resultado.agregarFinal(monedero);
-            }
+        ListaEnlazada<Monedero> copia = new ListaEnlazada<Monedero>();
+        for (Monedero monedero : monederosPorCliente.obtener(clienteId)) {
+            copia.agregarFinal(monedero);
         }
-        return resultado;
+        return copia;
     }
 
     public BigDecimal saldoTotal(String clienteId) {
