@@ -9,6 +9,8 @@ import co.edu.uniquindio.poo.util.Constantes;
 import co.edu.uniquindio.poo.util.Dinero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
 
+import java.math.BigDecimal;
+
 public class ClienteService {
 
     private final RelojSimulado reloj;
@@ -99,10 +101,10 @@ public class ClienteService {
         return resultado;
     }
 
-    public double saldoTotal(String clienteId) {
-        double total = 0;
+    public BigDecimal saldoTotal(String clienteId) {
+        BigDecimal total = Dinero.CERO;
         for (Monedero monedero : monederosDe(clienteId)) {
-            total += monedero.getSaldo();
+            total = total.add(monedero.getSaldo());
         }
         return Dinero.redondear(total);
     }

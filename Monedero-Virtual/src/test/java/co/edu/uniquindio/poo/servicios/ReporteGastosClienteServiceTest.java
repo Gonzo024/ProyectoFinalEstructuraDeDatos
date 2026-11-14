@@ -9,6 +9,7 @@ import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 import co.edu.uniquindio.poo.util.RelojSimulado;
 
+import co.edu.uniquindio.poo.util.Dinero;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -45,28 +46,28 @@ public class ReporteGastosClienteServiceTest {
             LocalDateTime.of(2026, 11, 5, 10, 0);
 
         Transaccion comida = Transaccion.builder(
-            "T1", TipoTransaccion.PAGO, 50000, fecha
+            "T1", TipoTransaccion.PAGO, Dinero.de(50000), fecha
         )
         .origen(ana.getId(), principal.getId())
         .categoria(CategoriaGasto.ALIMENTACION)
         .construir();
 
         Transaccion transporte = Transaccion.builder(
-            "T2", TipoTransaccion.PAGO, 20000, fecha
+            "T2", TipoTransaccion.PAGO, Dinero.de(20000), fecha
         )
         .origen(ana.getId(), principal.getId())
         .categoria(CategoriaGasto.TRANSPORTE)
         .construir();
 
         Transaccion almuerzo = Transaccion.builder(
-            "T3", TipoTransaccion.PAGO, 30000, fecha
+            "T3", TipoTransaccion.PAGO, Dinero.de(30000), fecha
         )
         .origen(ana.getId(), ahorros.getId())
         .categoria(CategoriaGasto.ALIMENTACION)
         .construir();
 
         Transaccion deposito = Transaccion.builder(
-            "T4", TipoTransaccion.DEPOSITO, 100000, fecha
+            "T4", TipoTransaccion.DEPOSITO, Dinero.de(100000), fecha
         )
         .destino(ana.getId(), ahorros.getId())
         .construir();
@@ -84,27 +85,24 @@ public class ReporteGastosClienteServiceTest {
             new ReporteGastosClienteService(clientes);
 
         assertEquals(
-            100000,
-            reporte.calcularTotalCliente(ana.getId()),
-            0.001
+            Dinero.de(100000),
+            reporte.calcularTotalCliente(ana.getId())
         );
 
         assertEquals(
-            100000,
+            Dinero.de(100000),
             reporte.calcularTotalMensual(
                 ana.getId(), 2026, 11
-            ),
-            0.001
+            )
         );
 
         assertEquals(
-            80000,
+            Dinero.de(80000),
             reporte.calcularCategoriaMensual(
                 ana.getId(),
                 CategoriaGasto.ALIMENTACION,
                 2026, 11
-            ),
-            0.001
+            )
         );
 
         assertEquals(
@@ -135,9 +133,8 @@ public class ReporteGastosClienteServiceTest {
             new ReporteGastosClienteService(clientes);
 
         assertEquals(
-            0,
-            reporte.calcularTotalCliente(ana.getId()),
-            0.001
+            Dinero.de(0),
+            reporte.calcularTotalCliente(ana.getId())
         );
 
         assertNull(

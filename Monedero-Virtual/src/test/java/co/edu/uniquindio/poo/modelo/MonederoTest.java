@@ -2,6 +2,7 @@ package co.edu.uniquindio.poo.modelo;
 
 import co.edu.uniquindio.poo.excepciones.SaldoInsuficienteException;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
+import co.edu.uniquindio.poo.util.Dinero;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,7 +18,7 @@ public class MonederoTest {
     void monederoNuevoTieneSaldoCeroYSinHistorial() {
         Monedero monedero = crearMonedero();
 
-        assertEquals(0.0, monedero.getSaldo(), 0.001);
+        assertEquals(Dinero.CERO, monedero.getSaldo());
         assertTrue(monedero.getHistorial().estaVacia());
         assertTrue(monedero.getReversibles().estaVacia());
     }
@@ -26,34 +27,34 @@ public class MonederoTest {
     void acreditarSuma() {
         Monedero monedero = crearMonedero();
 
-        monedero.acreditar(100.50);
-        monedero.acreditar(20);
+        monedero.acreditar(Dinero.de("100.50"));
+        monedero.acreditar(Dinero.de(20));
 
-        assertEquals(120.50, monedero.getSaldo(), 0.001);
+        assertEquals(Dinero.de("120.50"), monedero.getSaldo());
     }
 
     @Test
     void debitarResta() {
         Monedero monedero = crearMonedero();
-        monedero.acreditar(100);
+        monedero.acreditar(Dinero.de(100));
 
-        monedero.debitar(40.25);
+        monedero.debitar(Dinero.de("40.25"));
 
-        assertEquals(59.75, monedero.getSaldo(), 0.001);
+        assertEquals(Dinero.de("59.75"), monedero.getSaldo());
     }
 
     @Test
     void noSePuedeDebitarMasDeLoQueHayYElSaldoNoCambia() {
         Monedero monedero = crearMonedero();
-        monedero.acreditar(50);
+        monedero.acreditar(Dinero.de(50));
 
         try {
-            monedero.debitar(50.01);
+            monedero.debitar(Dinero.de("50.01"));
             fail("Debio lanzar SaldoInsuficienteException");
         } catch (SaldoInsuficienteException e) {
             // correcto: el saldo no puede quedar negativo
         }
 
-        assertEquals(50.0, monedero.getSaldo(), 0.001);
+        assertEquals(Dinero.de(50), monedero.getSaldo());
     }
 }

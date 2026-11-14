@@ -2,6 +2,9 @@
 package co.edu.uniquindio.poo.modelo;
 
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
+import co.edu.uniquindio.poo.util.Dinero;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class TransaccionProgramada
@@ -13,7 +16,7 @@ public class TransaccionProgramada
     private String monederoOrigenId;
     private String clienteDestinoId;
     private String monederoDestinoId;
-    private double monto;
+    private BigDecimal monto;
     private LocalDateTime fechaProgramada;
     private String frecuencia;
     private boolean activa;
@@ -25,7 +28,7 @@ public class TransaccionProgramada
             String monederoOrigenId,
             String clienteDestinoId,
             String monederoDestinoId,
-            double monto,
+            BigDecimal monto,
             LocalDateTime fechaProgramada,
             String frecuencia) {
 
@@ -35,7 +38,7 @@ public class TransaccionProgramada
             );
         }
 
-        if (monto <= 0) {
+        if (!Dinero.esPositivo(monto)) {
             throw new IllegalArgumentException(
                 "El monto debe ser mayor que cero"
             );
@@ -53,7 +56,7 @@ public class TransaccionProgramada
         this.monederoOrigenId = monederoOrigenId;
         this.clienteDestinoId = clienteDestinoId;
         this.monederoDestinoId = monederoDestinoId;
-        this.monto = monto;
+        this.monto = Dinero.redondear(monto);
         this.fechaProgramada = fechaProgramada;
         this.frecuencia = frecuencia;
         this.activa = true;
@@ -112,7 +115,7 @@ public class TransaccionProgramada
         return monederoDestinoId;
     }
 
-    public double getMonto() {
+    public BigDecimal getMonto() {
         return monto;
     }
 

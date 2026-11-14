@@ -1,5 +1,7 @@
 package co.edu.uniquindio.poo.modelo.enums;
 
+import java.math.BigDecimal;
+
 /**
  * Rangos de cliente según puntos acumulados (enunciado):
  * Bronce 0–500, Plata 501–1000, Oro 1001–5000, Platino &gt; 5000.
@@ -9,24 +11,24 @@ package co.edu.uniquindio.poo.modelo.enums;
  */
 public enum Rango {
 
-    BRONCE("Bronce", 0, 500, 0.00, 1.00, "#b87333"),
-    PLATA("Plata", 501, 1000, 0.10, 1.10, "#a8a9ad"),
-    ORO("Oro", 1001, 5000, 0.25, 1.25, "#d4af37"),
-    PLATINO("Platino", 5001, Long.MAX_VALUE, 0.50, 1.50, "#5b8fa8");
+    BRONCE("Bronce", 0, 500, "0.00", "1.00", "#b87333"),
+    PLATA("Plata", 501, 1000, "0.10", "1.10", "#a8a9ad"),
+    ORO("Oro", 1001, 5000, "0.25", "1.25", "#d4af37"),
+    PLATINO("Platino", 5001, Long.MAX_VALUE, "0.50", "1.50", "#5b8fa8");
 
     private final String nombre;
     private final long puntosMinimos;
     private final long puntosMaximos;
-    private final double descuentoComisionTransferencia;
-    private final double multiplicadorPuntos;
+    private final BigDecimal descuentoComisionTransferencia;
+    private final BigDecimal multiplicadorPuntos;
     private final String colorHex;
 
-    Rango(String nombre, long min, long max, double descuento, double multiplicador, String colorHex) {
+    Rango(String nombre, long min, long max, String descuento, String multiplicador, String colorHex) {
         this.nombre = nombre;
         this.puntosMinimos = min;
         this.puntosMaximos = max;
-        this.descuentoComisionTransferencia = descuento;
-        this.multiplicadorPuntos = multiplicador;
+        this.descuentoComisionTransferencia = new BigDecimal(descuento);
+        this.multiplicadorPuntos = new BigDecimal(multiplicador);
         this.colorHex = colorHex;
     }
 
@@ -56,11 +58,11 @@ public enum Rango {
         return puntosMaximos;
     }
 
-    public double getDescuentoComisionTransferencia() {
+    public BigDecimal getDescuentoComisionTransferencia() {
         return descuentoComisionTransferencia;
     }
 
-    public double getMultiplicadorPuntos() {
+    public BigDecimal getMultiplicadorPuntos() {
         return multiplicadorPuntos;
     }
 
@@ -71,7 +73,7 @@ public enum Rango {
     public String descripcionBeneficios() {
         if (this == BRONCE) return "Rango inicial";
         return String.format("%d%% menos comisión en transferencias · puntos x%.2f",
-                Math.round(descuentoComisionTransferencia * 100), multiplicadorPuntos);
+                descuentoComisionTransferencia.movePointRight(2).intValue(), multiplicadorPuntos);
     }
 
     @Override

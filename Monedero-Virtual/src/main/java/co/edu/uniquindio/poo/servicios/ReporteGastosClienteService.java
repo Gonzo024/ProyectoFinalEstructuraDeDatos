@@ -7,6 +7,8 @@ import co.edu.uniquindio.poo.modelo.Transaccion;
 import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 
+import java.math.BigDecimal;
+
 public class ReporteGastosClienteService {
 
     private ClienteService clienteService;
@@ -101,7 +103,7 @@ public class ReporteGastosClienteService {
     }
 
     // Total gastado por el cliente.
-    public double calcularTotalCliente(String clienteId) {
+    public BigDecimal calcularTotalCliente(String clienteId) {
 
         ListaEnlazada<Transaccion> historial =
             obtenerHistorialGastos(clienteId);
@@ -112,7 +114,7 @@ public class ReporteGastosClienteService {
     }
 
     // Total gastado durante un mes.
-    public double calcularTotalMensual(
+    public BigDecimal calcularTotalMensual(
             String clienteId,
             int anio,
             int mes) {
@@ -138,7 +140,7 @@ public class ReporteGastosClienteService {
     }
 
     // Gastos de una categoria durante un mes.
-    public double calcularCategoriaMensual(
+    public BigDecimal calcularCategoriaMensual(
             String clienteId,
             CategoriaGasto categoria,
             int anio,

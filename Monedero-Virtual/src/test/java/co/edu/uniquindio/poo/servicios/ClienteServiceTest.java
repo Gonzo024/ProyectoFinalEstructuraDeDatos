@@ -6,6 +6,7 @@ import co.edu.uniquindio.poo.modelo.Cliente;
 import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
+import co.edu.uniquindio.poo.util.Dinero;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,9 +116,9 @@ public class ClienteServiceTest {
         ClienteService servicio = crearServicio();
         servicio.registrarCliente("Ana", "ana@correo.com", "1234");
         servicio.crearMonedero("C1", "Ahorros", TipoMonedero.AHORROS);
-        servicio.obtenerMonedero("M1").acreditar(100);
-        servicio.obtenerMonedero("M2").acreditar(50.5);
+        servicio.obtenerMonedero("M1").acreditar(Dinero.de(100));
+        servicio.obtenerMonedero("M2").acreditar(Dinero.de("50.5"));
 
-        assertEquals(150.5, servicio.saldoTotal("C1"), 0.001);
+        assertEquals(Dinero.de("150.50"), servicio.saldoTotal("C1"));
     }
 }
