@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      spacing="15"
+      style="-fx-background-color: #F4F6FA;">
+
+    <padding>
+        <Insets top="25" right="25"
+                bottom="25" left="25"/>
+    </padding>
+
+    <Label text="Monedero Virtual"
+           style="-fx-font-size: 26px;
+                  -fx-font-weight: bold;"/>
+
+    <Label text="Programaciones, notificaciones y análisis de gastos"
+           style="-fx-font-size: 14px;
+                  -fx-text-fill: #666666;"/>
+
+    <TabPane tabClosingPolicy="UNAVAILABLE"
+             VBox.vgrow="ALWAYS">
+
+        <tabs>
+
+            <Tab text="Programaciones">
+                <VBox spacing="15"
+                      style="-fx-padding: 20;">
+
+                    <Label text="Transacciones programadas"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;"/>
+
+                    <Label text="Programa operaciones para una fecha futura."/>
+
+                    <TextField promptText="ID del cliente"/>
+
+                    <TextField promptText="ID del monedero origen"/>
+
+                    <TextField promptText="Monto"/>
+
+                    <DatePicker promptText="Fecha de ejecución"/>
+
+                    <ComboBox promptText="Frecuencia"/>
+
+                    <HBox spacing="10">
+                        <Button text="Programar"/>
+                        <Button text="Cancelar programación"/>
+                    </HBox>
+
+                    <TableView VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="ID"
+                                         prefWidth="100"/>
+                            <TableColumn text="Tipo"
+                                         prefWidth="150"/>
+                            <TableColumn text="Monto"
+                                         prefWidth="150"/>
+                            <TableColumn text="Fecha"
+                                         prefWidth="180"/>
+                            <TableColumn text="Frecuencia"
+                                         prefWidth="150"/>
+                        </columns>
+                    </TableView>
+
+                </VBox>
+            </Tab>
+
+            <Tab text="Notificaciones">
+                <VBox spacing="15"
+                      style="-fx-padding: 20;">
+
+                    <Label text="Mis notificaciones"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;"/>
+
+                    <TextField promptText="ID del cliente"/>
+
+                    <HBox spacing="10">
+                        <Button text="Consultar"/>
+                        <Button text="Marcar como leída"/>
+                    </HBox>
+
+                    <TableView VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="ID"
+                                         prefWidth="90"/>
+                            <TableColumn text="Tipo"
+                                         prefWidth="170"/>
+                            <TableColumn text="Mensaje"
+                                         prefWidth="350"/>
+                            <TableColumn text="Leída"
+                                         prefWidth="100"/>
+                        </columns>
+                    </TableView>
+
+                </VBox>
+            </Tab>
+
+            <Tab text="Análisis de gastos">
+                <VBox spacing="15"
+                      style="-fx-padding: 20;">
+
+                    <Label text="Reporte de gastos"
+                           style="-fx-font-size: 20px;
+                                  -fx-font-weight: bold;"/>
+
+                    <TextField promptText="ID del cliente"/>
+
+                    <HBox spacing="10">
+                        <TextField promptText="Año"/>
+                        <TextField promptText="Mes"/>
+                        <Button text="Consultar gastos"/>
+                    </HBox>
+
+                    <Label text="Total gastado: $0"
+                           style="-fx-font-size: 22px;
+                                  -fx-font-weight: bold;"/>
+
+                    <TableView VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="Categoría"
+                                         prefWidth="300"/>
+                            <TableColumn text="Total"
+                                         prefWidth="200"/>
+                        </columns>
+                    </TableView>
+
+                </VBox>
+            </Tab>
+
+        </tabs>
+    </TabPane>
+
+</VBox>
