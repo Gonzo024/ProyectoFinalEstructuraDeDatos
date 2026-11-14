@@ -13,6 +13,7 @@ import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 import co.edu.uniquindio.poo.servicios.ClienteService;
 import co.edu.uniquindio.poo.servicios.NotificacionService;
 import co.edu.uniquindio.poo.servicios.ProgramacionService;
+import co.edu.uniquindio.poo.servicios.ProgramacionNotificacionService;
 import co.edu.uniquindio.poo.servicios.ReporteGastosClienteService;
 import co.edu.uniquindio.poo.util.Dinero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
@@ -28,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class ModuloTresController {
 
@@ -43,6 +45,14 @@ public class ModuloTresController {
 
     private final ProgramacionService programacionService =
             new ProgramacionService(reloj);
+
+    // Conecta programaciones con notificaciones.
+    private final ProgramacionNotificacionService
+            programacionNotificacionService =
+            new ProgramacionNotificacionService(
+                    programacionService,
+                    notificacionService
+            );
 
     private final ReporteGastosClienteService reporteService =
             new ReporteGastosClienteService(clienteService);
@@ -127,7 +137,9 @@ public class ModuloTresController {
         actualizarEstadoProgramaciones();
     }
 
+    // -------------------------------------------------
     // PROGRAMACIONES
+    // -------------------------------------------------
 
     private void configurarProgramaciones() {
 
@@ -167,6 +179,7 @@ public class ModuloTresController {
                         datos.getValue().getFrecuencia()));
 
         tablaProgramaciones.setItems(programacionesVisibles);
+
         tablaProgramaciones.setPlaceholder(
                 new Label("No hay programaciones registradas"));
     }
@@ -187,7 +200,6 @@ public class ModuloTresController {
                         "Escribe el ID del cliente y del monedero");
             }
 
-            // Validar que ambos existan y correspondan.
             clienteService.obtenerCliente(clienteId);
 
             Monedero monedero =
@@ -198,9 +210,24 @@ public class ModuloTresController {
                         "El monedero no pertenece al cliente");
             }
 
-            BigDecimal monto = new BigDecimal(
-                    txtMontoProgramacion.getText().trim()
-                            .replace(",", "."));
+            // Convertimos el monto y validamos errores.
+            String textoMonto =
+                    txtMontoProgramacion.getText()
+                            .trim().replace(",", ".");
+
+            if (textoMonto.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Debes escribir un monto");
+            }
+
+            BigDecimal monto;
+
+            try {
+                monto = new BigDecimal(textoMonto);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "El monto debe ser un numero valido");
+            }
 
             if (!Dinero.esPositivo(monto)) {
                 throw new IllegalArgumentException(
@@ -216,8 +243,15 @@ public class ModuloTresController {
                         "Selecciona una fecha");
             }
 
-            LocalTime hora = LocalTime.parse(
-                    txtHoraProgramacion.getText().trim());
+            LocalTime hora;
+
+            try {
+                hora = LocalTime.parse(
+                        txtHoraProgramacion.getText().trim());
+            } catch (DateTimeParseException error) {
+                throw new IllegalArgumentException(
+                        "La hora debe tener el formato HH:mm");
+            }
 
             LocalDateTime fechaCompleta =
                     LocalDateTime.of(fecha, hora);
@@ -243,8 +277,6 @@ public class ModuloTresController {
 
             if (tipo == TipoTransaccion.DEPOSITO) {
 
-                // El monedero indicado recibira el dinero.
-                // No se realiza el deposito en este momento.
                 monederoOrigen = null;
                 clienteDestino = clienteId;
                 monederoDestino = monederoId;
@@ -292,7 +324,6 @@ public class ModuloTresController {
                 }
             }
 
-            // El contador aumenta solo al confirmar los datos.
             String id = "P" + (contadorProgramaciones + 1);
 
             TransaccionProgramada nueva =
@@ -308,7 +339,9 @@ public class ModuloTresController {
                             frecuencia
                     );
 
-            programacionService.programar(nueva);
+            // NUEVA INTEGRACION:
+            // Guarda en la cola y genera una notificacion.
+            programacionNotificacionService.programarYNotificar(nueva);
 
             contadorProgramaciones++;
 
@@ -318,12 +351,17 @@ public class ModuloTresController {
 
             actualizarEstadoProgramaciones();
 
+            // Si estamos viendo avisos de este cliente,
+            // refrescamos su tabla tambien.
+            actualizarNotificacionesSiCorresponde(clienteId);
+
             mostrarMensaje(
                     "Programacion creada",
                     "Se registro " + id
                             + " para el "
                             + fechaCompleta.format(formatoFecha)
-                            + ". El dinero aun no se ha movido.");
+                            + ". Se genero una notificacion. "
+                            + "El dinero aun no se ha movido.");
 
         } catch (RuntimeException error) {
 
@@ -347,8 +385,10 @@ public class ModuloTresController {
             return;
         }
 
+        // NUEVA INTEGRACION:
+        // Cancela en el servicio y genera el aviso.
         boolean cancelada =
-                programacionService.cancelarTransaccion(
+                programacionNotificacionService.cancelarYNotificar(
                         seleccionada.getId());
 
         if (cancelada) {
@@ -356,9 +396,13 @@ public class ModuloTresController {
             programacionesVisibles.remove(seleccionada);
             actualizarEstadoProgramaciones();
 
+            actualizarNotificacionesSiCorresponde(
+                    seleccionada.getClienteOrigenId());
+
             mostrarMensaje(
                     "Programacion cancelada",
-                    "Se cancelo " + seleccionada.getId());
+                    "Se cancelo " + seleccionada.getId()
+                            + " y se genero una notificacion.");
 
         } else {
 
@@ -398,7 +442,9 @@ public class ModuloTresController {
                         + programacionService.cantidadPendientes());
     }
 
+    // -------------------------------------------------
     // NOTIFICACIONES
+    // -------------------------------------------------
 
     private void configurarNotificaciones() {
 
@@ -494,13 +540,15 @@ public class ModuloTresController {
                         seleccionada.getId());
 
         if (marcada) {
+
             actualizarTablaNotificaciones(clienteId);
-            tablaNotificaciones.refresh();
 
             mostrarMensaje(
                     "Correcto",
                     "Notificacion marcada como leida");
+
         } else {
+
             mostrarMensaje(
                     "Error",
                     "No se encontro la notificacion");
@@ -529,7 +577,21 @@ public class ModuloTresController {
                 "Notificaciones sin leer: " + noLeidas);
     }
 
+    // Actualiza avisos solo si la tabla muestra ese cliente.
+    private void actualizarNotificacionesSiCorresponde(
+            String clienteId) {
+
+        String clienteConsultado =
+                txtClienteNotificacion.getText().trim();
+
+        if (clienteId.equals(clienteConsultado)) {
+            actualizarTablaNotificaciones(clienteId);
+        }
+    }
+
+    // -------------------------------------------------
     // ANALISIS DE GASTOS
+    // -------------------------------------------------
 
     private void configurarGastos() {
 
@@ -571,16 +633,26 @@ public class ModuloTresController {
                         "Debes escribir el ID del cliente");
             }
 
-            int anio = Integer.parseInt(
-                    txtAnioGastos.getText().trim());
+            int anio;
+            int mes;
 
-            int mes = Integer.parseInt(
-                    txtMesGastos.getText().trim());
+            try {
+
+                anio = Integer.parseInt(
+                        txtAnioGastos.getText().trim());
+
+                mes = Integer.parseInt(
+                        txtMesGastos.getText().trim());
+
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "El anio y el mes deben ser numeros enteros");
+            }
 
             if (anio < 1 || anio > 9999
                     || mes < 1 || mes > 12) {
                 throw new IllegalArgumentException(
-                        "Ingresa un año valido y un mes entre 1 y 12");
+                        "Ingresa un anio valido y un mes entre 1 y 12");
             }
 
             clienteService.obtenerCliente(clienteId);
@@ -603,6 +675,7 @@ public class ModuloTresController {
                                 clienteId, categoria, anio, mes);
 
                 if (gasto.signum() > 0) {
+
                     categorias.add(categoria);
 
                     if (gasto.compareTo(mayorMonto) > 0) {
@@ -612,8 +685,6 @@ public class ModuloTresController {
                 }
             }
 
-            // Guardamos el periodo consultado para que la tabla
-            // no cambie si se editan los campos de texto.
             clienteReporteActual = clienteId;
             anioReporteActual = anio;
             mesReporteActual = mes;
@@ -665,7 +736,9 @@ public class ModuloTresController {
         lblEstadoGastos.setText("Sin consulta");
     }
 
+    // -------------------------------------------------
     // DATOS DE DEMOSTRACION
+    // -------------------------------------------------
 
     @FXML
     private void cargarDatosDemostracion() {
@@ -747,7 +820,6 @@ public class ModuloTresController {
         txtMesGastos.setText(
                 String.valueOf(reloj.hoy().getMonthValue()));
 
-        // Facilita probar programaciones con C1 y M1.
         txtClienteProgramacion.setText(cliente.getId());
         txtMonederoProgramacion.setText(principal.getId());
 
@@ -762,29 +834,47 @@ public class ModuloTresController {
                         + ". Puedes usarlos en Programaciones.");
     }
 
+    // -------------------------------------------------
     // METODOS AUXILIARES
+    // -------------------------------------------------
 
     private String formatearDinero(BigDecimal monto) {
         return "$" + monto.setScale(2).toPlainString();
     }
 
     private String mensajeError(RuntimeException error) {
-        if (error.getMessage() == null) {
-            return "No fue posible completar la operacion";
+
+        if (error instanceof NumberFormatException) {
+            return "Debes ingresar un numero valido";
         }
-        return error.getMessage();
+
+        if (error instanceof DateTimeParseException) {
+            return "La hora debe tener el formato HH:mm";
+        }
+
+        if (error instanceof IllegalArgumentException
+                && error.getMessage() != null) {
+            return error.getMessage();
+        }
+
+        return "No fue posible completar la operacion";
     }
 
     private void mostrarMensaje(
             String titulo,
             String mensaje) {
 
+        ButtonType aceptar = new ButtonType(
+                "Aceptar",
+                ButtonBar.ButtonData.OK_DONE);
+
         Alert alerta = new Alert(
-                Alert.AlertType.INFORMATION);
+                Alert.AlertType.INFORMATION,
+                mensaje,
+                aceptar);
 
         alerta.setTitle(titulo);
         alerta.setHeaderText(null);
-        alerta.setContentText(mensaje);
         alerta.showAndWait();
     }
 }
