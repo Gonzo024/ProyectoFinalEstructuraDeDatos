@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.poo.vista;
 
 import co.edu.uniquindio.poo.estructuras.grafo.Arista;
@@ -6,10 +7,12 @@ import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.Transaccion;
 import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
 import co.edu.uniquindio.poo.modelo.enums.TipoMonedero;
+
 import co.edu.uniquindio.poo.servicios.ClienteService;
+import co.edu.uniquindio.poo.servicios.ContextoMonedero;
+import co.edu.uniquindio.poo.servicios.ContextoSesion;
 import co.edu.uniquindio.poo.servicios.MultimonederoService;
 import co.edu.uniquindio.poo.servicios.TransaccionService;
-import co.edu.uniquindio.poo.util.RelojSimulado;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
@@ -28,30 +31,45 @@ import java.time.format.DateTimeFormatter;
 
 public class ModuloUnoController {
 
-    // Nombres de las operaciones que aparecen en el ComboBox.
+    // ==================================================
+    // NOMBRES DE LAS OPERACIONES
+    // ==================================================
+
     private static final String DEPOSITAR = "Depositar";
     private static final String RETIRAR = "Retirar";
     private static final String PAGAR = "Pagar / gasto";
-    private static final String TRANSFERIR = "Transferir a otro cliente";
-    private static final String ENTRE_MIS_MONEDEROS = "Entre mis monederos";
+    private static final String TRANSFERIR =
+            "Transferir a otro cliente";
+    private static final String ENTRE_MIS_MONEDEROS =
+            "Entre mis monederos";
 
     private static final DateTimeFormatter FORMATO_FECHA =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    // Servicios que utilizara nuestra interfaz.
-    private final RelojSimulado reloj = new RelojSimulado();
+    // ==================================================
+    // SERVICIOS COMPARTIDOS
+    // ==================================================
+
+    // Antes este controlador creaba un ClienteService,
+    // un TransaccionService y un reloj independientes.
+    //
+    // Ahora todos se obtienen del contexto comun,
+    // que tambien utilizara el modulo 3.
+    private final ContextoMonedero contexto =
+            ContextoSesion.obtener();
 
     private final ClienteService clienteService =
-            new ClienteService(reloj);
+            contexto.getClienteService();
 
     private final TransaccionService transaccionService =
-            new TransaccionService(clienteService, reloj);
+            contexto.getTransaccionService();
 
     private final MultimonederoService multimonederoService =
-            new MultimonederoService(clienteService);
+            contexto.getMultimonederoService();
 
-
+    // ==================================================
     // CAMPOS DE CLIENTES Y MONEDEROS
+    // ==================================================
 
     @FXML
     private TextField txtNombre;
@@ -89,9 +107,9 @@ public class ModuloUnoController {
     @FXML
     private TableColumn<Monedero, String> columnaSaldoMonedero;
 
-
+    // ==================================================
     // CAMPOS DE OPERACIONES
-
+    // ==================================================
 
     @FXML
     private ComboBox<String> cmbOperacion;
@@ -114,9 +132,9 @@ public class ModuloUnoController {
     @FXML
     private Label lblResultadoOperacion;
 
-
+    // ==================================================
     // CAMPOS DE HISTORIAL
-
+    // ==================================================
 
     @FXML
     private TextField txtMonederoHistorial;
@@ -151,9 +169,9 @@ public class ModuloUnoController {
     @FXML
     private TableColumn<Transaccion, String> columnaCategoriaTransaccion;
 
-    // -------------------------------------------------
+    // ==================================================
     // CAMPOS DE MULTIMONEDERO
-    // -------------------------------------------------
+    // ==================================================
 
     @FXML
     private TextField txtClienteMultimonedero;
@@ -173,26 +191,39 @@ public class ModuloUnoController {
     @FXML
     private TableColumn<Arista, String> columnaVeces;
 
+    // ==================================================
     // INICIALIZACION
-
+    // ==================================================
 
     @FXML
     public void initialize() {
 
-        // El multimonedero escucha a TransaccionService para llenar el grafo.
-        transaccionService.agregarListener(multimonederoService);
+        // El listener del grafo ya se registra
+        // una sola vez en ContextoMonedero.
+        //
+        // No debemos volver a agregarlo aqui,
+        // porque recibiria cada transferencia
+        // dos veces y duplicaria las cantidades.
 
         cmbTipoMonedero.setItems(
-                FXCollections.observableArrayList(TipoMonedero.values())
+                FXCollections.observableArrayList(
+                        TipoMonedero.values()
+                )
         );
 
         cmbCategoria.setItems(
-                FXCollections.observableArrayList(CategoriaGasto.values())
+                FXCollections.observableArrayList(
+                        CategoriaGasto.values()
+                )
         );
 
         cmbOperacion.setItems(
                 FXCollections.observableArrayList(
-                        DEPOSITAR, RETIRAR, PAGAR, TRANSFERIR, ENTRE_MIS_MONEDEROS
+                        DEPOSITAR,
+                        RETIRAR,
+                        PAGAR,
+                        TRANSFERIR,
+                        ENTRE_MIS_MONEDEROS
                 )
         );
 
@@ -201,57 +232,86 @@ public class ModuloUnoController {
         configurarTablaAristas();
     }
 
+    // ==================================================
+    // CONFIGURACION DE TABLAS
+    // ==================================================
+
     private void configurarTablaMonederos() {
 
         columnaIdMonedero.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getId())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getId()
+                )
         );
 
         columnaNombreMonedero.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getNombre())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getNombre()
+                )
         );
 
         columnaTipoMonedero.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getTipo().toString())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getTipo().toString()
+                )
         );
 
         columnaSaldoMonedero.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper("$" + datos.getValue().getSaldo())
+                new ReadOnlyStringWrapper(
+                        "$" + datos.getValue().getSaldo()
+                )
         );
     }
 
     private void configurarTablaHistorial() {
 
         columnaIdTransaccion.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getId())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getId()
+                )
         );
 
         columnaTipoTransaccion.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getTipo().toString())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getTipo().toString()
+                )
         );
 
         columnaMontoTransaccion.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper("$" + datos.getValue().getMonto())
+                new ReadOnlyStringWrapper(
+                        "$" + datos.getValue().getMonto()
+                )
         );
 
         columnaComisionTransaccion.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper("$" + datos.getValue().getComision())
+                new ReadOnlyStringWrapper(
+                        "$" + datos.getValue().getComision()
+                )
         );
 
         columnaFechaTransaccion.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().getFecha().format(FORMATO_FECHA)
+                        datos.getValue()
+                                .getFecha()
+                                .format(FORMATO_FECHA)
                 )
         );
 
         columnaEstadoTransaccion.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper(datos.getValue().getEstado().toString())
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getEstado().toString()
+                )
         );
 
         columnaCategoriaTransaccion.setCellValueFactory(datos -> {
-            CategoriaGasto categoria = datos.getValue().getCategoria();
+
+            CategoriaGasto categoria =
+                    datos.getValue().getCategoria();
+
             return new ReadOnlyStringWrapper(
-                    categoria == null ? "-" : categoria.toString()
+                    categoria == null
+                            ? "-"
+                            : categoria.toString()
             );
         });
     }
@@ -260,57 +320,72 @@ public class ModuloUnoController {
 
         columnaDesde.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        nombreMonedero(datos.getValue().getOrigen())
+                        nombreMonedero(
+                                datos.getValue().getOrigen()
+                        )
                 )
         );
 
         columnaHacia.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        nombreMonedero(datos.getValue().getDestino())
+                        nombreMonedero(
+                                datos.getValue().getDestino()
+                        )
                 )
         );
 
         columnaTotalMovido.setCellValueFactory(datos ->
-                new ReadOnlyStringWrapper("$" + datos.getValue().getPeso())
+                new ReadOnlyStringWrapper(
+                        "$" + datos.getValue().getPeso()
+                )
         );
 
         columnaVeces.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        String.valueOf(datos.getValue().getCantidad())
+                        String.valueOf(
+                                datos.getValue().getCantidad()
+                        )
                 )
         );
     }
 
-
-    // ACCIONES DE CLIENTES Y MONEDEROS
-
+    // ==================================================
+    // CLIENTES Y MONEDEROS
+    // ==================================================
 
     @FXML
     private void registrarCliente() {
 
         try {
-            Cliente cliente = clienteService.registrarCliente(
-                    txtNombre.getText(),
-                    txtCorreo.getText(),
-                    txtPin.getText()
-            );
+
+            Cliente cliente =
+                    clienteService.registrarCliente(
+                            txtNombre.getText(),
+                            txtCorreo.getText(),
+                            txtPin.getText()
+                    );
 
             txtNombre.clear();
             txtCorreo.clear();
             txtPin.clear();
 
-            // Mostramos de una vez sus monederos (ya tiene el Principal).
-            txtClienteMonederos.setText(cliente.getId());
+            txtClienteMonederos.setText(
+                    cliente.getId()
+            );
+
             consultarMonederos();
 
             mostrarInformacion(
                     "Cliente registrado",
-                    "Se registro a " + cliente.getNombre()
-                            + " con el ID " + cliente.getId()
+                    "Se registro a "
+                            + cliente.getNombre()
+                            + " con el ID "
+                            + cliente.getId()
             );
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
@@ -318,28 +393,38 @@ public class ModuloUnoController {
     private void crearMonedero() {
 
         try {
+
             if (cmbTipoMonedero.getValue() == null) {
-                mostrarError("Selecciona el tipo de monedero");
+
+                mostrarError(
+                        "Selecciona el tipo de monedero"
+                );
+
                 return;
             }
 
-            Monedero monedero = clienteService.crearMonedero(
-                    textoDe(txtClienteMonederos),
-                    txtNombreMonedero.getText(),
-                    cmbTipoMonedero.getValue()
-            );
+            Monedero monedero =
+                    clienteService.crearMonedero(
+                            textoDe(txtClienteMonederos),
+                            txtNombreMonedero.getText(),
+                            cmbTipoMonedero.getValue()
+                    );
 
             txtNombreMonedero.clear();
+
             consultarMonederos();
 
             mostrarInformacion(
                     "Monedero creado",
-                    "Se creo el monedero " + monedero
-                            + " con el ID " + monedero.getId()
+                    "Se creo el monedero "
+                            + monedero
+                            + " con el ID "
+                            + monedero.getId()
             );
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
@@ -347,11 +432,16 @@ public class ModuloUnoController {
     private void consultarMonederos() {
 
         try {
-            String clienteId = textoDe(txtClienteMonederos);
 
-            ObservableList<Monedero> filas = FXCollections.observableArrayList();
+            String clienteId =
+                    textoDe(txtClienteMonederos);
 
-            for (Monedero monedero : clienteService.monederosDe(clienteId)) {
+            ObservableList<Monedero> filas =
+                    FXCollections.observableArrayList();
+
+            for (Monedero monedero :
+                    clienteService.monederosDe(clienteId)) {
+
                 filas.add(monedero);
             }
 
@@ -359,104 +449,165 @@ public class ModuloUnoController {
             tablaMonederos.refresh();
 
             lblSaldoTotal.setText(
-                    "Saldo total: $" + clienteService.saldoTotal(clienteId)
+                    "Saldo total: $"
+                            + clienteService.saldoTotal(
+                                    clienteId
+                            )
             );
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
-
-    // ACCIONES DE OPERACIONES
-
+    // ==================================================
+    // OPERACIONES FINANCIERAS
+    // ==================================================
 
     @FXML
     private void realizarOperacion() {
 
-        String operacion = cmbOperacion.getValue();
+        String operacion =
+                cmbOperacion.getValue();
 
         if (operacion == null) {
+
             mostrarError("Selecciona una operacion");
+
             return;
         }
 
         try {
-            String origen = textoDe(txtMonederoOrigen);
-            BigDecimal monto = leerMonto();
-            String descripcion = txtDescripcion.getText();
 
-            Transaccion t;
+            String origen =
+                    textoDe(txtMonederoOrigen);
+
+            BigDecimal monto =
+                    leerMonto();
+
+            String descripcion =
+                    txtDescripcion.getText();
+
+            Transaccion transaccion;
 
             if (operacion.equals(DEPOSITAR)) {
-                t = transaccionService.depositar(origen, monto, descripcion);
+
+                transaccion = transaccionService.depositar(
+                        origen,
+                        monto,
+                        descripcion
+                );
 
             } else if (operacion.equals(RETIRAR)) {
-                t = transaccionService.retirar(origen, monto, descripcion);
+
+                transaccion = transaccionService.retirar(
+                        origen,
+                        monto,
+                        descripcion
+                );
 
             } else if (operacion.equals(PAGAR)) {
-                t = transaccionService.pagar(
-                        origen, monto, cmbCategoria.getValue(), descripcion
+
+                transaccion = transaccionService.pagar(
+                        origen,
+                        monto,
+                        cmbCategoria.getValue(),
+                        descripcion
                 );
 
             } else if (operacion.equals(TRANSFERIR)) {
-                t = transaccionService.transferir(
-                        origen, textoDe(txtMonederoDestino), monto, descripcion
+
+                transaccion = transaccionService.transferir(
+                        origen,
+                        textoDe(txtMonederoDestino),
+                        monto,
+                        descripcion
                 );
 
             } else {
-                t = transaccionService.transferirEntreMisMonederos(
-                        origen, textoDe(txtMonederoDestino), monto, descripcion
-                );
+
+                transaccion =
+                        transaccionService.transferirEntreMisMonederos(
+                                origen,
+                                textoDe(txtMonederoDestino),
+                                monto,
+                                descripcion
+                        );
             }
 
             lblResultadoOperacion.setText(
-                    "Operacion " + t.getId() + " realizada: " + t.getTipo()
-                            + " por $" + t.getMonto()
-                            + " (comision $" + t.getComision() + "). "
-                            + "Saldo de " + origen + ": $"
-                            + transaccionService.consultarSaldo(origen)
+                    "Operacion "
+                            + transaccion.getId()
+                            + " realizada: "
+                            + transaccion.getTipo()
+                            + " por $"
+                            + transaccion.getMonto()
+                            + " (comision $"
+                            + transaccion.getComision()
+                            + "). Saldo de "
+                            + origen
+                            + ": $"
+                            + transaccionService.consultarSaldo(
+                                    origen
+                            )
             );
 
             txtMonto.clear();
             txtDescripcion.clear();
 
-        } catch (RuntimeException e) {
-            // Incluye saldo insuficiente: la operacion queda como FALLIDA en el historial.
-            lblResultadoOperacion.setText("No se pudo realizar: " + e.getMessage());
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            lblResultadoOperacion.setText(
+                    "No se pudo realizar: "
+                            + error.getMessage()
+            );
+
+            mostrarError(error.getMessage());
         }
     }
 
-    // -------------------------------------------------
-    // ACCIONES DE HISTORIAL
-    // -------------------------------------------------
+    // ==================================================
+    // HISTORIAL
+    // ==================================================
 
     @FXML
     private void consultarHistorial() {
 
         try {
-            String monederoId = textoDe(txtMonederoHistorial);
 
-            ObservableList<Transaccion> filas = FXCollections.observableArrayList();
+            String monederoId =
+                    textoDe(txtMonederoHistorial);
 
-            for (Transaccion t : transaccionService.consultarHistorial(monederoId)) {
-                filas.add(t);
+            ObservableList<Transaccion> filas =
+                    FXCollections.observableArrayList();
+
+            for (Transaccion transaccion :
+                    transaccionService.consultarHistorial(
+                            monederoId
+                    )) {
+
+                filas.add(transaccion);
             }
 
             tablaHistorial.setItems(filas);
             tablaHistorial.refresh();
 
             lblSaldoHistorial.setText(
-                    "Saldo: $" + transaccionService.consultarSaldo(monederoId)
+                    "Saldo: $"
+                            + transaccionService.consultarSaldo(
+                                    monederoId
+                            )
             );
 
             lblEstadoHistorial.setText(
-                    "Movimientos encontrados: " + filas.size()
+                    "Movimientos encontrados: "
+                            + filas.size()
             );
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
@@ -464,18 +615,25 @@ public class ModuloUnoController {
     private void revertirUltima() {
 
         try {
-            Transaccion t = transaccionService.revertirUltima(
-                    textoDe(txtMonederoHistorial)
-            );
+
+            Transaccion transaccion =
+                    transaccionService.revertirUltima(
+                            textoDe(txtMonederoHistorial)
+                    );
 
             consultarHistorial();
 
             lblEstadoHistorial.setText(
-                    "Se revirtio la operacion " + t.getId() + " (" + t.getTipo() + ")"
+                    "Se revirtio la operacion "
+                            + transaccion.getId()
+                            + " ("
+                            + transaccion.getTipo()
+                            + ")"
             );
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
@@ -483,90 +641,136 @@ public class ModuloUnoController {
     private void verificarIntegridad() {
 
         try {
-            boolean correcta = transaccionService.verificarIntegridad(
-                    textoDe(txtMonederoHistorial)
-            );
+
+            boolean correcta =
+                    transaccionService.verificarIntegridad(
+                            textoDe(txtMonederoHistorial)
+                    );
 
             if (correcta) {
+
                 lblEstadoHistorial.setText(
-                        "Integridad correcta: el saldo coincide con el historial"
+                        "Integridad correcta: "
+                                + "el saldo coincide con el historial"
                 );
+
             } else {
+
                 lblEstadoHistorial.setText(
-                        "ALERTA: el saldo NO coincide con el historial"
+                        "ALERTA: el saldo NO coincide "
+                                + "con el historial"
                 );
             }
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
-    // -------------------------------------------------
-    // ACCIONES DE MULTIMONEDERO
-    // -------------------------------------------------
+    // ==================================================
+    // MULTIMONEDERO
+    // ==================================================
 
     @FXML
     private void consultarMultimonedero() {
 
         try {
-            ObservableList<Arista> filas = FXCollections.observableArrayList();
 
-            for (Arista arista : multimonederoService.movimientosDelCliente(
-                    textoDe(txtClienteMultimonedero))) {
+            ObservableList<Arista> filas =
+                    FXCollections.observableArrayList();
+
+            for (Arista arista :
+                    multimonederoService.movimientosDelCliente(
+                            textoDe(txtClienteMultimonedero)
+                    )) {
+
                 filas.add(arista);
             }
 
             tablaAristas.setItems(filas);
             tablaAristas.refresh();
 
-        } catch (RuntimeException e) {
-            mostrarError(e.getMessage());
+        } catch (RuntimeException error) {
+
+            mostrarError(error.getMessage());
         }
     }
 
-    // -------------------------------------------------
-    // AYUDAS
-    // -------------------------------------------------
+    // ==================================================
+    // METODOS AUXILIARES
+    // ==================================================
 
-    /** Texto del campo sin espacios; los IDs se pasan a mayuscula (m1 -> M1). */
     private String textoDe(TextField campo) {
+
         String texto = campo.getText();
+
         if (texto == null || texto.isBlank()) {
-            throw new IllegalArgumentException("Completa el campo: " + campo.getPromptText());
+
+            throw new IllegalArgumentException(
+                    "Completa el campo: "
+                            + campo.getPromptText()
+            );
         }
+
         return texto.trim().toUpperCase();
     }
 
-    /** Convierte el texto del monto a BigDecimal (acepta coma o punto decimal). */
     private BigDecimal leerMonto() {
+
         String texto = txtMonto.getText();
+
         if (texto == null || texto.isBlank()) {
-            throw new IllegalArgumentException("Escribe el monto");
+
+            throw new IllegalArgumentException(
+                    "Escribe el monto"
+            );
         }
+
         try {
-            return new BigDecimal(texto.trim().replace(",", "."));
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("El monto debe ser un numero, por ejemplo 1500.50");
+
+            return new BigDecimal(
+                    texto.trim().replace(",", ".")
+            );
+
+        } catch (NumberFormatException error) {
+
+            throw new IllegalArgumentException(
+                    "El monto debe ser un numero, "
+                            + "por ejemplo 1500.50"
+            );
         }
     }
 
-    /** "Ahorros (M2)" en lugar de solo "M2". */
-    private String nombreMonedero(String monederoId) {
-        return clienteService.obtenerMonedero(monederoId).getNombre()
-                + " (" + monederoId + ")";
+    private String nombreMonedero(
+            String monederoId) {
+
+        return clienteService
+                .obtenerMonedero(monederoId)
+                .getNombre()
+                + " ("
+                + monederoId
+                + ")";
     }
 
     private void mostrarError(String mensaje) {
-        Alert alerta = new Alert(Alert.AlertType.ERROR);
+
+        Alert alerta =
+                new Alert(Alert.AlertType.ERROR);
+
         alerta.setTitle("Error");
         alerta.setHeaderText(null);
         alerta.setContentText(mensaje);
         alerta.showAndWait();
     }
 
-    private void mostrarInformacion(String titulo, String mensaje) {
-        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
+    private void mostrarInformacion(
+            String titulo,
+            String mensaje) {
+
+        Alert alerta =
+                new Alert(Alert.AlertType.INFORMATION);
+
         alerta.setTitle(titulo);
         alerta.setHeaderText(null);
         alerta.setContentText(mensaje);
