@@ -33,26 +33,46 @@ public class EjecutorFinancieroProgramado
             return false;
         }
 
-        // Comprobamos que el monedero de origen
-        // realmente pertenezca al cliente indicado.
-        Monedero origen = clientes.obtenerMonedero(
-                programacion.getMonederoOrigenId()
-        );
-
-        if (!origen.getClienteId().equals(
-                programacion.getClienteOrigenId())) {
-            return false;
-        }
-
         TipoTransaccion tipo = programacion.getTipo();
+        String descripcion = "Programacion " + programacion.getId();
 
-        String descripcion = "Programacion "
-                + programacion.getId();
-
+        // DEPOSITO:
+        // En JavaFX el monedero se guarda como destino,
+        // porque el dinero entra a ese monedero.
         if (tipo == TipoTransaccion.DEPOSITO) {
 
+            String monederoId =
+                    programacion.getMonederoDestinoId();
+
+            // Compatibilidad con programaciones anteriores
+            // que guardaban el monedero como origen.
+            if (monederoId == null || monederoId.isBlank()) {
+                monederoId = programacion.getMonederoOrigenId();
+            }
+
+            if (monederoId == null || monederoId.isBlank()) {
+                return false;
+            }
+
+            Monedero destino = clientes.obtenerMonedero(
+                    monederoId
+            );
+
+            // El deposito solo puede ir al monedero
+            // perteneciente al cliente de la programacion.
+            if (!destino.getClienteId().equals(
+                    programacion.getClienteOrigenId())) {
+                return false;
+            }
+
+            if (programacion.getClienteDestinoId() != null
+                    && !destino.getClienteId().equals(
+                            programacion.getClienteDestinoId())) {
+                return false;
+            }
+
             transacciones.depositar(
-                    origen.getId(),
+                    destino.getId(),
                     programacion.getMonto(),
                     descripcion
             );
@@ -60,10 +80,29 @@ public class EjecutorFinancieroProgramado
             return true;
         }
 
+        // Las demas operaciones necesitan un origen.
+        String monederoOrigenId =
+                programacion.getMonederoOrigenId();
+
+        if (monederoOrigenId == null
+                || monederoOrigenId.isBlank()) {
+            return false;
+        }
+
+        Monedero origen = clientes.obtenerMonedero(
+                monederoOrigenId
+        );
+
+        if (!origen.getClienteId().equals(
+                programacion.getClienteOrigenId())) {
+            return false;
+        }
+
+        // PAGO
         if (tipo == TipoTransaccion.PAGO) {
 
-            // El modelo de programaciones aun no guarda
-            // la categoria elegida para el gasto.
+            // La programacion no guarda categoria;
+            // mientras tanto usamos OTROS.
             transacciones.pagar(
                     origen.getId(),
                     programacion.getMonto(),
@@ -74,15 +113,22 @@ public class EjecutorFinancieroProgramado
             return true;
         }
 
+        // TRANSFERENCIAS
         if (tipo == TipoTransaccion.TRANSFERENCIA
                 || tipo == TipoTransaccion.TRANSFERENCIA_INTERNA) {
 
+            String monederoDestinoId =
+                    programacion.getMonederoDestinoId();
+
+            if (monederoDestinoId == null
+                    || monederoDestinoId.isBlank()) {
+                return false;
+            }
+
             Monedero destino = clientes.obtenerMonedero(
-                    programacion.getMonederoDestinoId()
+                    monederoDestinoId
             );
 
-            // Evita transferir a un monedero diferente
-            // del cliente destino indicado.
             if (!destino.getClienteId().equals(
                     programacion.getClienteDestinoId())) {
                 return false;
@@ -97,15 +143,15 @@ public class EjecutorFinancieroProgramado
                         descripcion
                 );
 
-            } else {
-
-                transacciones.transferirEntreMisMonederos(
-                        origen.getId(),
-                        destino.getId(),
-                        programacion.getMonto(),
-                        descripcion
-                );
+                return true;
             }
+
+            transacciones.transferirEntreMisMonederos(
+                    origen.getId(),
+                    destino.getId(),
+                    programacion.getMonto(),
+                    descripcion
+            );
 
             return true;
         }
