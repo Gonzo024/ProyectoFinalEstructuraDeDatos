@@ -4,7 +4,6 @@ package co.edu.uniquindio.poo.vista;
 import co.edu.uniquindio.poo.modelo.Cliente;
 import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.Notificacion;
-import co.edu.uniquindio.poo.modelo.Transaccion;
 import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
 
 import co.edu.uniquindio.poo.modelo.enums.CategoriaGasto;
@@ -13,7 +12,8 @@ import co.edu.uniquindio.poo.modelo.enums.TipoNotificacion;
 import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 
 import co.edu.uniquindio.poo.servicios.ClienteService;
-import co.edu.uniquindio.poo.servicios.EjecutorFinancieroProgramado;
+import co.edu.uniquindio.poo.servicios.ContextoMonedero;
+import co.edu.uniquindio.poo.servicios.ContextoSesion;
 import co.edu.uniquindio.poo.servicios.NotificacionService;
 import co.edu.uniquindio.poo.servicios.ProcesadorProgramacionesService;
 import co.edu.uniquindio.poo.servicios.ProgramacionService;
@@ -42,57 +42,41 @@ import java.time.format.DateTimeParseException;
 public class ModuloTresController {
 
     // ==================================================
-    // SERVICIOS DEL MODULO
+    // SERVICIOS COMPARTIDOS CON EL MODULO UNO
     // ==================================================
 
+    // Los servicios ya no se crean por separado.
+    // Ambos modulos utilizan el mismo contexto.
+    private final ContextoMonedero contexto =
+            ContextoSesion.obtener();
+
     private final RelojSimulado reloj =
-            new RelojSimulado();
+            contexto.getReloj();
 
     private final ClienteService clienteService =
-            new ClienteService(reloj);
+            contexto.getClienteService();
+
+    private final TransaccionService transaccionService =
+            contexto.getTransaccionService();
 
     private final NotificacionService notificacionService =
-            new NotificacionService(reloj);
+            contexto.getNotificacionService();
 
     private final ProgramacionService programacionService =
-            new ProgramacionService(reloj);
+            contexto.getProgramacionService();
 
     private final ProgramacionNotificacionService
             programacionNotificacionService =
-            new ProgramacionNotificacionService(
-                    programacionService,
-                    notificacionService
-            );
+            contexto.getProgramacionNotificacionService();
 
     private final ReporteGastosClienteService reporteService =
-            new ReporteGastosClienteService(clienteService);
+            contexto.getReporteService();
 
-    // Servicio financiero implementado por el equipo.
-    // Utiliza los mismos clientes y el mismo reloj.
-    private final TransaccionService transaccionService =
-            new TransaccionService(
-                    clienteService,
-                    reloj
-            );
-
-    // Adaptador creado en los commits anteriores.
-    private final EjecutorFinancieroProgramado ejecutorFinanciero =
-            new EjecutorFinancieroProgramado(
-                    clienteService,
-                    transaccionService
-            );
-
-    // Ahora el procesador ejecuta movimientos reales
-    // dentro de los datos de esta aplicacion.
     private final ProcesadorProgramacionesService procesador =
-            new ProcesadorProgramacionesService(
-                    programacionService,
-                    notificacionService,
-                    ejecutorFinanciero
-            );
+            contexto.getProcesador();
 
     // ==================================================
-    // VARIABLES GENERALES
+    // VARIABLES
     // ==================================================
 
     private final ObservableList<TransaccionProgramada>
@@ -100,13 +84,16 @@ public class ModuloTresController {
             FXCollections.observableArrayList();
 
     private boolean datosDemostracionCargados = false;
-
     private int contadorProgramaciones = 0;
 
     private final DateTimeFormatter formatoFecha =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private Label lblRelojSimulado;
+
+    private String clienteReporteActual;
+    private int anioReporteActual;
+    private int mesReporteActual;
 
     // ==================================================
     // CAMPOS DE PROGRAMACIONES
@@ -115,7 +102,6 @@ public class ModuloTresController {
     @FXML private TextField txtClienteProgramacion;
     @FXML private TextField txtMonederoProgramacion;
     @FXML private TextField txtMontoProgramacion;
-
     @FXML private TextField txtClienteDestino;
     @FXML private TextField txtMonederoDestino;
     @FXML private TextField txtHoraProgramacion;
@@ -150,21 +136,12 @@ public class ModuloTresController {
     // ==================================================
 
     @FXML private TextField txtClienteNotificacion;
+    @FXML private TableView<Notificacion> tablaNotificaciones;
 
-    @FXML private TableView<Notificacion>
-            tablaNotificaciones;
-
-    @FXML private TableColumn<Notificacion, String>
-            columnaId;
-
-    @FXML private TableColumn<Notificacion, String>
-            columnaTipo;
-
-    @FXML private TableColumn<Notificacion, String>
-            columnaMensaje;
-
-    @FXML private TableColumn<Notificacion, String>
-            columnaLeida;
+    @FXML private TableColumn<Notificacion, String> columnaId;
+    @FXML private TableColumn<Notificacion, String> columnaTipo;
+    @FXML private TableColumn<Notificacion, String> columnaMensaje;
+    @FXML private TableColumn<Notificacion, String> columnaLeida;
 
     @FXML private Label lblCantidadNoLeidas;
 
@@ -188,10 +165,6 @@ public class ModuloTresController {
     @FXML private TableColumn<CategoriaGasto, String>
             columnaTotalGastos;
 
-    private String clienteReporteActual;
-    private int anioReporteActual;
-    private int mesReporteActual;
-
     // ==================================================
     // INICIALIZACION
     // ==================================================
@@ -213,10 +186,7 @@ public class ModuloTresController {
                 String.valueOf(hoy.getMonthValue())
         );
 
-        fechaProgramacion.setValue(
-                hoy.plusDays(1)
-        );
-
+        fechaProgramacion.setValue(hoy.plusDays(1));
         txtHoraProgramacion.setText("10:00");
 
         crearControlesSimulacion();
@@ -240,17 +210,11 @@ public class ModuloTresController {
 
         comboFrecuencia.setItems(
                 FXCollections.observableArrayList(
-                        "UNA_VEZ",
-                        "DIARIA",
-                        "SEMANAL",
-                        "MENSUAL"
+                        "UNA_VEZ", "DIARIA", "SEMANAL", "MENSUAL"
                 )
         );
 
-        comboTipo.setValue(
-                TipoTransaccion.PAGO
-        );
-
+        comboTipo.setValue(TipoTransaccion.PAGO);
         comboFrecuencia.setValue("UNA_VEZ");
 
         colProgId.setCellValueFactory(datos ->
@@ -267,16 +231,13 @@ public class ModuloTresController {
 
         colProgMonto.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        formatearDinero(
-                                datos.getValue().getMonto()
-                        )
+                        formatearDinero(datos.getValue().getMonto())
                 )
         );
 
         colProgFecha.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue()
-                                .getFechaProgramada()
+                        datos.getValue().getFechaProgramada()
                                 .format(formatoFecha)
                 )
         );
@@ -287,14 +248,10 @@ public class ModuloTresController {
                 )
         );
 
-        tablaProgramaciones.setItems(
-                programacionesVisibles
-        );
+        tablaProgramaciones.setItems(programacionesVisibles);
 
         tablaProgramaciones.setPlaceholder(
-                new Label(
-                        "No hay programaciones registradas"
-                )
+                new Label("No hay programaciones registradas")
         );
     }
 
@@ -304,16 +261,12 @@ public class ModuloTresController {
         try {
 
             String clienteId =
-                    txtClienteProgramacion
-                            .getText().trim();
+                    txtClienteProgramacion.getText().trim();
 
             String monederoId =
-                    txtMonederoProgramacion
-                            .getText().trim();
+                    txtMonederoProgramacion.getText().trim();
 
-            if (clienteId.isEmpty()
-                    || monederoId.isEmpty()) {
-
+            if (clienteId.isEmpty() || monederoId.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Escribe el ID del cliente y del monedero"
                 );
@@ -322,26 +275,19 @@ public class ModuloTresController {
             clienteService.obtenerCliente(clienteId);
 
             Monedero monedero =
-                    clienteService.obtenerMonedero(
-                            monederoId
-                    );
+                    clienteService.obtenerMonedero(monederoId);
 
-            if (!monedero.getClienteId().equals(
-                    clienteId)) {
-
+            if (!monedero.getClienteId().equals(clienteId)) {
                 throw new IllegalArgumentException(
                         "El monedero no pertenece al cliente"
                 );
             }
 
             String textoMonto =
-                    txtMontoProgramacion
-                            .getText()
-                            .trim()
-                            .replace(",", ".");
+                    txtMontoProgramacion.getText()
+                            .trim().replace(",", ".");
 
             if (textoMonto.isEmpty()) {
-
                 throw new IllegalArgumentException(
                         "Debes escribir un monto"
                 );
@@ -350,18 +296,14 @@ public class ModuloTresController {
             BigDecimal monto;
 
             try {
-
                 monto = new BigDecimal(textoMonto);
-
             } catch (NumberFormatException error) {
-
                 throw new IllegalArgumentException(
                         "El monto debe ser un numero valido"
                 );
             }
 
             if (!Dinero.esPositivo(monto)) {
-
                 throw new IllegalArgumentException(
                         "El monto debe ser mayor que cero"
                 );
@@ -369,11 +311,9 @@ public class ModuloTresController {
 
             monto = Dinero.redondear(monto);
 
-            LocalDate fecha =
-                    fechaProgramacion.getValue();
+            LocalDate fecha = fechaProgramacion.getValue();
 
             if (fecha == null) {
-
                 throw new IllegalArgumentException(
                         "Selecciona una fecha"
                 );
@@ -382,14 +322,10 @@ public class ModuloTresController {
             LocalTime hora;
 
             try {
-
                 hora = LocalTime.parse(
-                        txtHoraProgramacion
-                                .getText().trim()
+                        txtHoraProgramacion.getText().trim()
                 );
-
             } catch (DateTimeParseException error) {
-
                 throw new IllegalArgumentException(
                         "La hora debe tener el formato HH:mm"
                 );
@@ -398,22 +334,16 @@ public class ModuloTresController {
             LocalDateTime fechaCompleta =
                     LocalDateTime.of(fecha, hora);
 
-            if (!fechaCompleta.isAfter(
-                    reloj.ahora())) {
-
+            if (!fechaCompleta.isAfter(reloj.ahora())) {
                 throw new IllegalArgumentException(
                         "La fecha y hora deben ser futuras"
                 );
             }
 
-            TipoTransaccion tipo =
-                    comboTipo.getValue();
-
-            String frecuencia =
-                    comboFrecuencia.getValue();
+            TipoTransaccion tipo = comboTipo.getValue();
+            String frecuencia = comboFrecuencia.getValue();
 
             if (tipo == null || frecuencia == null) {
-
                 throw new IllegalArgumentException(
                         "Selecciona el tipo y la frecuencia"
                 );
@@ -421,90 +351,64 @@ public class ModuloTresController {
 
             String clienteOrigen = clienteId;
             String monederoOrigen = monederoId;
-
             String clienteDestino = null;
             String monederoDestino = null;
 
-            // Un deposito entra al monedero.
-            // Por eso se registra como destino.
             if (tipo == TipoTransaccion.DEPOSITO) {
 
                 monederoOrigen = null;
                 clienteDestino = clienteId;
                 monederoDestino = monederoId;
 
-            } else if (
-                    tipo == TipoTransaccion.TRANSFERENCIA
-                    || tipo == TipoTransaccion.TRANSFERENCIA_INTERNA
-            ) {
+            } else if (tipo == TipoTransaccion.TRANSFERENCIA
+                    || tipo == TipoTransaccion.TRANSFERENCIA_INTERNA) {
 
                 clienteDestino =
-                        txtClienteDestino
-                                .getText().trim();
+                        txtClienteDestino.getText().trim();
 
                 monederoDestino =
-                        txtMonederoDestino
-                                .getText().trim();
+                        txtMonederoDestino.getText().trim();
 
                 if (clienteDestino.isEmpty()
                         || monederoDestino.isEmpty()) {
-
                     throw new IllegalArgumentException(
                             "Indica cliente y monedero destino"
                     );
                 }
 
-                clienteService.obtenerCliente(
-                        clienteDestino
-                );
+                clienteService.obtenerCliente(clienteDestino);
 
                 Monedero destino =
-                        clienteService.obtenerMonedero(
-                                monederoDestino
-                        );
+                        clienteService.obtenerMonedero(monederoDestino);
 
-                if (!destino.getClienteId().equals(
-                        clienteDestino)) {
-
+                if (!destino.getClienteId().equals(clienteDestino)) {
                     throw new IllegalArgumentException(
-                            "El monedero destino no pertenece "
-                                    + "al cliente destino"
+                            "El monedero destino no pertenece al cliente destino"
                     );
                 }
 
-                if (monederoDestino.equals(
-                        monederoId)) {
-
+                if (monederoDestino.equals(monederoId)) {
                     throw new IllegalArgumentException(
                             "El origen y destino deben ser diferentes"
                     );
                 }
 
-                if (
-                        tipo == TipoTransaccion.TRANSFERENCIA_INTERNA
-                        && !clienteDestino.equals(clienteId)
-                ) {
-
+                if (tipo == TipoTransaccion.TRANSFERENCIA_INTERNA
+                        && !clienteDestino.equals(clienteId)) {
                     throw new IllegalArgumentException(
-                            "La transferencia interna debe "
-                                    + "ser del mismo cliente"
+                            "La transferencia interna debe ser del mismo cliente"
                     );
                 }
 
-                if (
-                        tipo == TipoTransaccion.TRANSFERENCIA
-                        && clienteDestino.equals(clienteId)
-                ) {
-
+                if (tipo == TipoTransaccion.TRANSFERENCIA
+                        && clienteDestino.equals(clienteId)) {
                     throw new IllegalArgumentException(
-                            "Usa transferencia interna "
-                                    + "para el mismo cliente"
+                            "Usa transferencia interna para el mismo cliente"
                     );
                 }
             }
 
-            String id =
-                    "P" + (contadorProgramaciones + 1);
+            String id = "P" + (contadorProgramaciones + 1);
 
             TransaccionProgramada nueva =
                     new TransaccionProgramada(
@@ -519,36 +423,28 @@ public class ModuloTresController {
                             frecuencia
                     );
 
-            programacionNotificacionService
-                    .programarYNotificar(nueva);
+            programacionNotificacionService.programarYNotificar(nueva);
 
             contadorProgramaciones++;
 
             programacionesVisibles.add(nueva);
-
             programacionesVisibles.sort(
                     TransaccionProgramada::compareTo
             );
 
             actualizarEstadoProgramaciones();
-
-            actualizarNotificacionesSiCorresponde(
-                    clienteId
-            );
+            actualizarNotificacionesSiCorresponde(clienteId);
 
             mostrarMensaje(
                     "Programacion creada",
                     "Se registro " + id
                             + " para el "
-                            + fechaCompleta.format(
-                                    formatoFecha
-                            )
+                            + fechaCompleta.format(formatoFecha)
                             + ". Se genero una notificacion. "
                             + "El dinero aun no se ha movido."
             );
 
         } catch (RuntimeException error) {
-
             mostrarMensaje(
                     "No se pudo programar",
                     mensajeError(error)
@@ -560,32 +456,25 @@ public class ModuloTresController {
     private void cancelarProgramacion() {
 
         TransaccionProgramada seleccionada =
-                tablaProgramaciones
-                        .getSelectionModel()
+                tablaProgramaciones.getSelectionModel()
                         .getSelectedItem();
 
         if (seleccionada == null) {
-
             mostrarMensaje(
                     "Seleccion",
                     "Selecciona una programacion de la tabla"
             );
-
             return;
         }
 
         boolean cancelada =
-                programacionNotificacionService
-                        .cancelarYNotificar(
-                                seleccionada.getId()
-                        );
+                programacionNotificacionService.cancelarYNotificar(
+                        seleccionada.getId()
+                );
 
         if (cancelada) {
 
-            programacionesVisibles.remove(
-                    seleccionada
-            );
-
+            programacionesVisibles.remove(seleccionada);
             actualizarEstadoProgramaciones();
 
             actualizarNotificacionesSiCorresponde(
@@ -594,13 +483,11 @@ public class ModuloTresController {
 
             mostrarMensaje(
                     "Programacion cancelada",
-                    "Se cancelo "
-                            + seleccionada.getId()
+                    "Se cancelo " + seleccionada.getId()
                             + " y se genero una notificacion."
             );
 
         } else {
-
             mostrarMensaje(
                     "Error",
                     "La programacion ya no esta pendiente"
@@ -615,27 +502,19 @@ public class ModuloTresController {
                 programacionService.consultarSiguiente();
 
         if (siguiente == null) {
-
             mostrarMensaje(
                     "Sin programaciones",
                     "No hay operaciones pendientes"
             );
-
             return;
         }
 
-        tablaProgramaciones
-                .getSelectionModel()
-                .select(siguiente);
-
-        tablaProgramaciones.scrollTo(
-                siguiente
-        );
+        tablaProgramaciones.getSelectionModel().select(siguiente);
+        tablaProgramaciones.scrollTo(siguiente);
 
         mostrarMensaje(
                 "Proxima programacion",
-                siguiente.getId()
-                        + " - "
+                siguiente.getId() + " - "
                         + siguiente.getFechaProgramada()
                                 .format(formatoFecha)
         );
@@ -655,8 +534,7 @@ public class ModuloTresController {
         );
 
         titulo.setStyle(
-                "-fx-font-weight: bold; "
-                        + "-fx-font-size: 14px;"
+                "-fx-font-weight: bold; -fx-font-size: 14px;"
         );
 
         lblRelojSimulado = new Label();
@@ -678,43 +556,27 @@ public class ModuloTresController {
         );
 
         HBox botones = new HBox(
-                10,
-                btnAvanzar,
-                btnProcesar
+                10, btnAvanzar, btnProcesar
         );
 
         Label advertencia = new Label(
-                "Las operaciones modifican los saldos "
-                        + "de prueba. El reloj se avanza manualmente."
+                "Las operaciones modifican saldos reales "
+                        + "de esta sesion de prueba. "
+                        + "El reloj se avanza manualmente."
         );
 
         advertencia.setWrapText(true);
-
         advertencia.setStyle(
-                "-fx-text-fill: #777777; "
-                        + "-fx-font-size: 12px;"
+                "-fx-text-fill: #777777; -fx-font-size: 12px;"
         );
 
         int posicion =
-                panel.getChildren().indexOf(
-                        tablaProgramaciones
-                );
+                panel.getChildren().indexOf(tablaProgramaciones);
 
-        panel.getChildren().add(
-                posicion++, titulo
-        );
-
-        panel.getChildren().add(
-                posicion++, lblRelojSimulado
-        );
-
-        panel.getChildren().add(
-                posicion++, botones
-        );
-
-        panel.getChildren().add(
-                posicion, advertencia
-        );
+        panel.getChildren().add(posicion++, titulo);
+        panel.getChildren().add(posicion++, lblRelojSimulado);
+        panel.getChildren().add(posicion++, botones);
+        panel.getChildren().add(posicion, advertencia);
 
         actualizarRelojVisual();
     }
@@ -725,21 +587,17 @@ public class ModuloTresController {
                 programacionService.consultarSiguiente();
 
         if (siguiente == null) {
-
             mostrarMensaje(
                     "Sin programaciones",
                     "Primero debes crear una programacion."
             );
-
             return;
         }
 
         LocalDateTime fecha =
                 siguiente.getFechaProgramada();
 
-        // El reloj solo avanza; no retrocede.
         if (fecha.isAfter(reloj.ahora())) {
-
             reloj.fijar(fecha);
         }
 
@@ -748,39 +606,27 @@ public class ModuloTresController {
         mostrarMensaje(
                 "Reloj actualizado",
                 "El reloj simulado ahora marca "
-                        + reloj.ahora().format(
-                                formatoFecha
-                        )
+                        + reloj.ahora().format(formatoFecha)
                         + ". Ya puedes ejecutar las vencidas."
         );
     }
 
     private void procesarVencimientosDePrueba() {
 
-        if (!programacionService
-                .hayTransaccionesVencidas()) {
-
+        if (!programacionService.hayTransaccionesVencidas()) {
             mostrarMensaje(
                     "Sin vencimientos",
                     "No hay operaciones vencidas."
             );
-
             return;
         }
 
-        // El procesador utiliza EjecutorFinancieroProgramado.
-        // Las operaciones exitosas modifican el saldo.
-        // Las fallidas generan su notificacion.
-        int procesadas =
-                procesador.procesarVencidas();
+        int procesadas = procesador.procesarVencidas();
 
-        // Quitamos solo las operaciones terminadas.
-        // Las recurrentes exitosas siguen activas.
         programacionesVisibles.removeIf(
                 programacion -> !programacion.isActiva()
         );
 
-        // Ordenamos por la siguiente fecha.
         programacionesVisibles.sort(
                 TransaccionProgramada::compareTo
         );
@@ -790,22 +636,14 @@ public class ModuloTresController {
         actualizarEstadoProgramaciones();
         actualizarRelojVisual();
 
-        // Actualizar las notificaciones visibles.
         String clienteConsultado =
-                txtClienteNotificacion
-                        .getText().trim();
+                txtClienteNotificacion.getText().trim();
 
         if (!clienteConsultado.isEmpty()) {
-
-            actualizarTablaNotificaciones(
-                    clienteConsultado
-            );
+            actualizarTablaNotificaciones(clienteConsultado);
         }
 
-        // Actualizar el reporte de gastos,
-        // por si se acaba de ejecutar un pago.
         if (clienteReporteActual != null) {
-
             consultarGastos();
         }
 
@@ -813,9 +651,10 @@ public class ModuloTresController {
                 "Procesamiento completado",
                 "Se procesaron " + procesadas
                         + " programaciones vencidas. "
-                        + "Consulta las notificaciones para comprobar "
-                        + "cuales se ejecutaron correctamente "
-                        + "y cuales fallaron."
+                        + "Consulta Notificaciones para comprobar "
+                        + "cuales se ejecutaron y cuales fallaron. "
+                        + "Los movimientos exitosos tambien aparecen "
+                        + "en el historial del modulo Mi monedero."
         );
     }
 
@@ -823,9 +662,7 @@ public class ModuloTresController {
 
         lblRelojSimulado.setText(
                 "Fecha simulada: "
-                        + reloj.ahora().format(
-                                formatoFecha
-                        )
+                        + reloj.ahora().format(formatoFecha)
         );
     }
 
@@ -833,8 +670,7 @@ public class ModuloTresController {
 
         lblEstadoProgramaciones.setText(
                 "Programaciones pendientes: "
-                        + programacionService
-                                .cantidadPendientes()
+                        + programacionService.cantidadPendientes()
         );
     }
 
@@ -864,15 +700,12 @@ public class ModuloTresController {
 
         columnaLeida.setCellValueFactory(datos ->
                 new ReadOnlyStringWrapper(
-                        datos.getValue().isLeida()
-                                ? "Si" : "No"
+                        datos.getValue().isLeida() ? "Si" : "No"
                 )
         );
 
         tablaNotificaciones.setPlaceholder(
-                new Label(
-                        "No hay notificaciones para mostrar"
-                )
+                new Label("No hay notificaciones para mostrar")
         );
     }
 
@@ -880,92 +713,83 @@ public class ModuloTresController {
     private void consultarNotificaciones() {
 
         String clienteId =
-                txtClienteNotificacion
-                        .getText().trim();
+                txtClienteNotificacion.getText().trim();
 
         if (clienteId.isEmpty()) {
-
             mostrarMensaje(
                     "Validacion",
                     "Debes escribir el ID del cliente"
             );
-
             return;
         }
 
         notificacionService.entregarNotificaciones();
-
-        actualizarTablaNotificaciones(
-                clienteId
-        );
+        actualizarTablaNotificaciones(clienteId);
     }
 
     @FXML
     private void crearNotificacionPrueba() {
 
         String clienteId =
-                txtClienteNotificacion
-                        .getText().trim();
+                txtClienteNotificacion.getText().trim();
 
         if (clienteId.isEmpty()) {
-
             mostrarMensaje(
                     "Validacion",
                     "Debes escribir el ID del cliente"
             );
-
             return;
         }
 
-        notificacionService.crearNotificacion(
-                clienteId,
-                TipoNotificacion.TRANSACCION,
-                "Esta es una notificacion de prueba"
-        );
+        // El cliente debe existir en el sistema compartido.
+        try {
+            clienteService.obtenerCliente(clienteId);
 
-        notificacionService.entregarNotificaciones();
+            notificacionService.crearNotificacion(
+                    clienteId,
+                    TipoNotificacion.TRANSACCION,
+                    "Esta es una notificacion de prueba"
+            );
 
-        actualizarTablaNotificaciones(
-                clienteId
-        );
+            notificacionService.entregarNotificaciones();
+            actualizarTablaNotificaciones(clienteId);
 
-        mostrarMensaje(
-                "Notificacion creada",
-                "Se creo una notificacion para "
-                        + clienteId
-        );
+            mostrarMensaje(
+                    "Notificacion creada",
+                    "Se creo una notificacion para " + clienteId
+            );
+
+        } catch (RuntimeException error) {
+            mostrarMensaje(
+                    "No se pudo crear",
+                    mensajeError(error)
+            );
+        }
     }
 
     @FXML
     private void marcarNotificacionLeida() {
 
         String clienteId =
-                txtClienteNotificacion
-                        .getText().trim();
+                txtClienteNotificacion.getText().trim();
 
         Notificacion seleccionada =
-                tablaNotificaciones
-                        .getSelectionModel()
+                tablaNotificaciones.getSelectionModel()
                         .getSelectedItem();
 
         if (seleccionada == null) {
-
             mostrarMensaje(
                     "Seleccion",
                     "Primero selecciona una notificacion"
             );
-
             return;
         }
 
-        if (!seleccionada.getClienteId()
-                .equals(clienteId)) {
-
+        if (!seleccionada.getClienteId().equals(clienteId)) {
             mostrarMensaje(
                     "Validacion",
                     "Consulta primero las notificaciones del cliente"
             );
-
             return;
         }
 
@@ -975,18 +799,13 @@ public class ModuloTresController {
                 );
 
         if (marcada) {
-
-            actualizarTablaNotificaciones(
-                    clienteId
-            );
+            actualizarTablaNotificaciones(clienteId);
 
             mostrarMensaje(
                     "Correcto",
                     "Notificacion marcada como leida"
             );
-
         } else {
-
             mostrarMensaje(
                     "Error",
                     "No se encontro la notificacion"
@@ -1001,9 +820,7 @@ public class ModuloTresController {
                 FXCollections.observableArrayList();
 
         for (Notificacion notificacion :
-                notificacionService
-                        .consultarNotificaciones(clienteId)) {
-
+                notificacionService.consultarNotificaciones(clienteId)) {
             lista.add(notificacion);
         }
 
@@ -1011,13 +828,10 @@ public class ModuloTresController {
         tablaNotificaciones.refresh();
 
         int noLeidas =
-                notificacionService.contarNoLeidas(
-                        clienteId
-                );
+                notificacionService.contarNoLeidas(clienteId);
 
         lblCantidadNoLeidas.setText(
-                "Notificaciones sin leer: "
-                        + noLeidas
+                "Notificaciones sin leer: " + noLeidas
         );
     }
 
@@ -1025,14 +839,10 @@ public class ModuloTresController {
             String clienteId) {
 
         String clienteConsultado =
-                txtClienteNotificacion
-                        .getText().trim();
+                txtClienteNotificacion.getText().trim();
 
         if (clienteId.equals(clienteConsultado)) {
-
-            actualizarTablaNotificaciones(
-                    clienteId
-            );
+            actualizarTablaNotificaciones(clienteId);
         }
     }
 
@@ -1042,20 +852,16 @@ public class ModuloTresController {
 
     private void configurarGastos() {
 
-        columnaCategoriaGastos.setCellValueFactory(
-                datos ->
-                        new ReadOnlyStringWrapper(
-                                datos.getValue().getNombre()
-                        )
+        columnaCategoriaGastos.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(
+                        datos.getValue().getNombre()
+                )
         );
 
         columnaTotalGastos.setCellValueFactory(datos -> {
 
             if (clienteReporteActual == null) {
-
-                return new ReadOnlyStringWrapper(
-                        "$0.00"
-                );
+                return new ReadOnlyStringWrapper("$0.00");
             }
 
             BigDecimal total =
@@ -1072,9 +878,7 @@ public class ModuloTresController {
         });
 
         tablaGastos.setPlaceholder(
-                new Label(
-                        "Consulta los gastos para ver resultados"
-                )
+                new Label("Consulta los gastos para ver resultados")
         );
     }
 
@@ -1087,7 +891,6 @@ public class ModuloTresController {
         try {
 
             if (clienteId.isEmpty()) {
-
                 throw new IllegalArgumentException(
                         "Debes escribir el ID del cliente"
                 );
@@ -1097,7 +900,6 @@ public class ModuloTresController {
             int mes;
 
             try {
-
                 anio = Integer.parseInt(
                         txtAnioGastos.getText().trim()
                 );
@@ -1105,9 +907,7 @@ public class ModuloTresController {
                 mes = Integer.parseInt(
                         txtMesGastos.getText().trim()
                 );
-
             } catch (NumberFormatException error) {
-
                 throw new IllegalArgumentException(
                         "El anio y el mes deben ser numeros enteros"
                 );
@@ -1115,10 +915,8 @@ public class ModuloTresController {
 
             if (anio < 1 || anio > 9999
                     || mes < 1 || mes > 12) {
-
                 throw new IllegalArgumentException(
-                        "Ingresa un anio valido "
-                                + "y un mes entre 1 y 12"
+                        "Ingresa un anio valido y un mes entre 1 y 12"
                 );
             }
 
@@ -1126,9 +924,7 @@ public class ModuloTresController {
 
             BigDecimal total =
                     reporteService.calcularTotalMensual(
-                            clienteId,
-                            anio,
-                            mes
+                            clienteId, anio, mes
                     );
 
             CategoriaGasto categoriaMayor = null;
@@ -1153,7 +949,6 @@ public class ModuloTresController {
                     categorias.add(categoria);
 
                     if (gasto.compareTo(mayorMonto) > 0) {
-
                         mayorMonto = gasto;
                         categoriaMayor = categoria;
                     }
@@ -1168,8 +963,7 @@ public class ModuloTresController {
             tablaGastos.refresh();
 
             lblTotalGastos.setText(
-                    "Total gastado: "
-                            + formatearDinero(total)
+                    "Total gastado: " + formatearDinero(total)
             );
 
             if (categoriaMayor == null) {
@@ -1179,8 +973,7 @@ public class ModuloTresController {
                 );
 
                 lblEstadoGastos.setText(
-                        "No se encontraron gastos "
-                                + "para este periodo"
+                        "No se encontraron gastos para este periodo"
                 );
 
             } else {
@@ -1191,8 +984,7 @@ public class ModuloTresController {
                 );
 
                 lblEstadoGastos.setText(
-                        "Reporte generado para "
-                                + clienteId
+                        "Reporte generado para " + clienteId
                 );
             }
 
@@ -1210,20 +1002,15 @@ public class ModuloTresController {
     private void limpiarReporte() {
 
         clienteReporteActual = null;
-
         tablaGastos.getItems().clear();
 
-        lblTotalGastos.setText(
-                "Total gastado: $0.00"
-        );
+        lblTotalGastos.setText("Total gastado: $0.00");
 
         lblCategoriaMayor.setText(
                 "Categoria con mayor gasto: Ninguna"
         );
 
-        lblEstadoGastos.setText(
-                "Sin consulta"
-        );
+        lblEstadoGastos.setText("Sin consulta");
     }
 
     // ==================================================
@@ -1234,214 +1021,143 @@ public class ModuloTresController {
     private void cargarDatosDemostracion() {
 
         if (datosDemostracionCargados) {
+            mostrarMensaje(
+                    "Datos de prueba",
+                    "Los datos de demostracion ya estaban cargados."
+            );
+            return;
+        }
 
-            txtClienteGastos.setText("C1");
+        try {
+
+            // Si ya existe este correo, no creamos otro
+            // cliente ni duplicamos los depositos.
+            for (Cliente existente : clienteService.listarClientes()) {
+
+                if (existente.getCorreo().equalsIgnoreCase(
+                        "demo@monedero.local")) {
+
+                    throw new IllegalArgumentException(
+                            "Ya existe el cliente de demostracion. "
+                                    + "Puedes utilizar sus monederos."
+                    );
+                }
+            }
+
+            Cliente cliente =
+                    clienteService.registrarCliente(
+                            "Cliente demostracion",
+                            "demo@monedero.local",
+                            "1234"
+                    );
+
+            Monedero principal =
+                    clienteService.monederosDe(cliente.getId())
+                            .obtenerValorNodo(0);
+
+            Monedero ahorros =
+                    clienteService.crearMonedero(
+                            cliente.getId(),
+                            "Ahorros",
+                            TipoMonedero.AHORROS
+                    );
+
+            // Primero ingresamos el dinero realmente.
+            // El servicio guarda cada deposito en el historial.
+            transaccionService.depositar(
+                    principal.getId(),
+                    Dinero.de(200000),
+                    "Saldo inicial de demostracion"
+            );
+
+            transaccionService.depositar(
+                    ahorros.getId(),
+                    Dinero.de(50000),
+                    "Saldo inicial de ahorros"
+            );
+
+            // Los gastos tambien deben ser movimientos
+            // reales; asi el saldo y el historial coinciden.
+            transaccionService.pagar(
+                    principal.getId(),
+                    Dinero.de(80000),
+                    CategoriaGasto.ALIMENTACION,
+                    "Compra de alimentos de demostracion"
+            );
+
+            transaccionService.pagar(
+                    principal.getId(),
+                    Dinero.de(20000),
+                    CategoriaGasto.TRANSPORTE,
+                    "Transporte de demostracion"
+            );
+
+            transaccionService.pagar(
+                    ahorros.getId(),
+                    Dinero.de(30000),
+                    CategoriaGasto.ALIMENTACION,
+                    "Segundo gasto de alimentos"
+            );
+
+            datosDemostracionCargados = true;
+
+            txtClienteProgramacion.setText(cliente.getId());
+            txtMonederoProgramacion.setText(principal.getId());
+
+            txtClienteGastos.setText(cliente.getId());
+
+            txtAnioGastos.setText(
+                    String.valueOf(reloj.hoy().getYear())
+            );
+
+            txtMesGastos.setText(
+                    String.valueOf(reloj.hoy().getMonthValue())
+            );
 
             consultarGastos();
 
             mostrarMensaje(
-                    "Datos de prueba",
-                    "Los datos ya estaban cargados"
+                    "Datos cargados",
+                    "Se creo el cliente " + cliente.getId()
+                            + " con monederos "
+                            + principal.getId() + " y "
+                            + ahorros.getId() + ". "
+                            + "Saldo principal: "
+                            + formatearDinero(principal.getSaldo())
+                            + ". Saldo ahorros: "
+                            + formatearDinero(ahorros.getSaldo())
+                            + ". Los gastos se registraron "
+                            + "como movimientos financieros reales."
             );
 
-            return;
+        } catch (RuntimeException error) {
+            mostrarMensaje(
+                    "No se pudieron cargar los datos",
+                    mensajeError(error)
+            );
         }
-
-        Cliente cliente =
-                clienteService.registrarCliente(
-                        "Cliente demostracion",
-                        "demo@monedero.local",
-                        "1234"
-                );
-
-        Monedero principal =
-                clienteService.monederosDe(
-                        cliente.getId()
-                ).obtenerValorNodo(0);
-
-        Monedero ahorros =
-                clienteService.crearMonedero(
-                        cliente.getId(),
-                        "Ahorros",
-                        TipoMonedero.AHORROS
-                );
-
-        // Saldos disponibles para probar operaciones
-        // financieras reales en esta demostracion.
-        transaccionService.depositar(
-                principal.getId(),
-                Dinero.de(200000),
-                "Saldo inicial de demostracion"
-        );
-
-        transaccionService.depositar(
-                ahorros.getId(),
-                Dinero.de(50000),
-                "Saldo inicial de ahorros"
-        );
-
-        // Estos son movimientos historicos simulados
-        // usados unicamente para mostrar el reporte.
-        LocalDateTime fecha1 =
-                reloj.ahora().minusDays(3);
-
-        LocalDateTime fecha2 =
-                reloj.ahora().minusDays(2);
-
-        LocalDateTime fecha3 =
-                reloj.ahora().minusDays(1);
-
-        Transaccion pago1 =
-                Transaccion.builder(
-                        "DEMO-T1",
-                        TipoTransaccion.PAGO,
-                        Dinero.de(80000),
-                        fecha1
-                )
-                .origen(
-                        cliente.getId(),
-                        principal.getId()
-                )
-                .categoria(
-                        CategoriaGasto.ALIMENTACION
-                )
-                .construir();
-
-        Transaccion pago2 =
-                Transaccion.builder(
-                        "DEMO-T2",
-                        TipoTransaccion.PAGO,
-                        Dinero.de(20000),
-                        fecha2
-                )
-                .origen(
-                        cliente.getId(),
-                        principal.getId()
-                )
-                .categoria(
-                        CategoriaGasto.TRANSPORTE
-                )
-                .construir();
-
-        Transaccion pago3 =
-                Transaccion.builder(
-                        "DEMO-T3",
-                        TipoTransaccion.PAGO,
-                        Dinero.de(30000),
-                        fecha3
-                )
-                .origen(
-                        cliente.getId(),
-                        ahorros.getId()
-                )
-                .categoria(
-                        CategoriaGasto.ALIMENTACION
-                )
-                .construir();
-
-        Transaccion deposito =
-                Transaccion.builder(
-                        "DEMO-T4",
-                        TipoTransaccion.DEPOSITO,
-                        Dinero.de(100000),
-                        fecha3
-                )
-                .destino(
-                        cliente.getId(),
-                        ahorros.getId()
-                )
-                .construir();
-
-        principal.getHistorial().agregarFinal(
-                pago1
-        );
-
-        principal.getHistorial().agregarFinal(
-                pago2
-        );
-
-        ahorros.getHistorial().agregarFinal(
-                pago3
-        );
-
-        ahorros.getHistorial().agregarFinal(
-                deposito
-        );
-
-        datosDemostracionCargados = true;
-
-        txtClienteGastos.setText(
-                cliente.getId()
-        );
-
-        txtAnioGastos.setText(
-                String.valueOf(
-                        reloj.hoy().getYear()
-                )
-        );
-
-        txtMesGastos.setText(
-                String.valueOf(
-                        reloj.hoy().getMonthValue()
-                )
-        );
-
-        txtClienteProgramacion.setText(
-                cliente.getId()
-        );
-
-        txtMonederoProgramacion.setText(
-                principal.getId()
-        );
-
-        consultarGastos();
-
-        mostrarMensaje(
-                "Datos cargados",
-                "Cliente " + cliente.getId()
-                        + " creado. Monederos: "
-                        + principal.getId()
-                        + " y "
-                        + ahorros.getId()
-                        + ". Saldo inicial del principal: "
-                        + formatearDinero(
-                                principal.getSaldo()
-                        )
-                        + ". Saldo inicial de ahorros: "
-                        + formatearDinero(
-                                ahorros.getSaldo()
-                        )
-        );
     }
 
     // ==================================================
     // METODOS AUXILIARES
     // ==================================================
 
-    private String formatearDinero(
-            BigDecimal monto) {
-
-        return "$"
-                + monto.setScale(2)
-                        .toPlainString();
+    private String formatearDinero(BigDecimal monto) {
+        return "$" + monto.setScale(2).toPlainString();
     }
 
-    private String mensajeError(
-            RuntimeException error) {
+    private String mensajeError(RuntimeException error) {
 
         if (error instanceof NumberFormatException) {
-
             return "Debes ingresar un numero valido";
         }
 
         if (error instanceof DateTimeParseException) {
-
             return "La hora debe tener el formato HH:mm";
         }
 
-        if (error instanceof IllegalArgumentException
-                && error.getMessage() != null) {
-
+        if (error.getMessage() != null
+                && !error.getMessage().isBlank()) {
             return error.getMessage();
         }
 
@@ -1452,35 +1168,26 @@ public class ModuloTresController {
             String titulo,
             String mensaje) {
 
-        ButtonType aceptar =
-                new ButtonType(
-                        "Aceptar",
-                        ButtonBar.ButtonData.OK_DONE
-                );
+        ButtonType aceptar = new ButtonType(
+                "Aceptar",
+                ButtonBar.ButtonData.OK_DONE
+        );
 
-        Alert alerta =
-                new Alert(
-                        Alert.AlertType.INFORMATION,
-                        "",
-                        aceptar
-                );
+        Alert alerta = new Alert(
+                Alert.AlertType.INFORMATION,
+                "",
+                aceptar
+        );
 
         alerta.setTitle(titulo);
         alerta.setHeaderText(null);
 
-        // Evita que JavaFX corte mensajes largos.
         Label contenido = new Label(mensaje);
-
         contenido.setWrapText(true);
         contenido.setMaxWidth(520);
 
-        alerta.getDialogPane().setContent(
-                contenido
-        );
-
-        alerta.getDialogPane().setPrefWidth(
-                580
-        );
+        alerta.getDialogPane().setContent(contenido);
+        alerta.getDialogPane().setPrefWidth(580);
 
         alerta.showAndWait();
     }
