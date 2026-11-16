@@ -1,4 +1,3 @@
-
 package co.edu.uniquindio.poo.servicios;
 
 import co.edu.uniquindio.poo.util.RelojSimulado;
@@ -22,6 +21,11 @@ public class ContextoMonedero {
     private final ReporteGastosClienteService reporteService;
     private final EjecutorFinancieroProgramado ejecutorFinanciero;
     private final ProcesadorProgramacionesService procesador;
+
+    // Integrante 2: puntos, rangos y beneficios.
+    private final RangoService rangoService;
+    private final PuntosService puntosService;
+    private final BeneficioService beneficioService;
 
     // Constructor normal para la aplicacion.
     public ContextoMonedero() {
@@ -60,6 +64,35 @@ public class ContextoMonedero {
 
         // Servicios de programaciones.
         notificacionService = new NotificacionService(reloj);
+
+        // Integrante 2: puntos, rangos y beneficios.
+        // El orden importa: cada servicio necesita a los anteriores.
+        rangoService = new RangoService(
+                clienteService,
+                notificacionService
+        );
+
+        puntosService = new PuntosService(
+                clienteService,
+                rangoService,
+                notificacionService,
+                reloj
+        );
+
+        // PuntosService escucha cada transaccion (patron Observador).
+        transaccionService.agregarListener(puntosService);
+
+        beneficioService = new BeneficioService(
+                puntosService,
+                transaccionService,
+                clienteService,
+                notificacionService,
+                reloj
+        );
+
+        // TransaccionService pregunta por descuentos a traves de la interfaz.
+        transaccionService.setProveedorDescuentos(beneficioService);
+
         programacionService = new ProgramacionService(reloj);
 
         programacionNotificacionService =
@@ -111,7 +144,7 @@ public class ContextoMonedero {
     }
 
     public ProgramacionNotificacionService
-            getProgramacionNotificacionService() {
+    getProgramacionNotificacionService() {
         return programacionNotificacionService;
     }
 
@@ -125,5 +158,19 @@ public class ContextoMonedero {
 
     public ProcesadorProgramacionesService getProcesador() {
         return procesador;
+    }
+
+    // Integrante 2
+
+    public RangoService getRangoService() {
+        return rangoService;
+    }
+
+    public PuntosService getPuntosService() {
+        return puntosService;
+    }
+
+    public BeneficioService getBeneficioService() {
+        return beneficioService;
     }
 }

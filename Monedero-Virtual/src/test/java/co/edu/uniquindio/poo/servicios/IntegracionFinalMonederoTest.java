@@ -1,7 +1,9 @@
 
 package co.edu.uniquindio.poo.servicios;
 
+import co.edu.uniquindio.poo.estructuras.lista.ListaEnlazada;
 import co.edu.uniquindio.poo.modelo.Cliente;
+import co.edu.uniquindio.poo.modelo.Notificacion;
 import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
 
@@ -136,18 +138,15 @@ public class IntegracionFinalMonederoTest {
         );
 
         // Registro de programacion + ejecucion.
+        // (No se cuentan los avisos de cambio de rango del sistema de puntos.)
         assertEquals(
                 2,
-                contexto.getNotificacionService()
-                        .contarNoLeidas(cliente.getId())
+                contarNoLeidasSinCambioDeRango(cliente.getId())
         );
 
         assertEquals(
                 TipoNotificacion.PROGRAMADA_EJECUTADA,
-                contexto.getNotificacionService()
-                        .consultarNotificaciones(cliente.getId())
-                        .obtenerValorNodo(1)
-                        .getTipo()
+                ultimaNotificacion(cliente.getId()).getTipo()
         );
 
         // No puede cobrar dos veces el mismo pago.
@@ -285,10 +284,7 @@ public class IntegracionFinalMonederoTest {
 
         assertEquals(
                 TipoNotificacion.PROGRAMADA_FALLIDA,
-                contexto.getNotificacionService()
-                        .consultarNotificaciones(cliente.getId())
-                        .obtenerValorNodo(1)
-                        .getTipo()
+                ultimaNotificacion(cliente.getId()).getTipo()
         );
 
         assertEquals(
@@ -384,5 +380,27 @@ public class IntegracionFinalMonederoTest {
                 contexto.getTransaccionService()
                         .verificarIntegridad(principal.getId())
         );
+    }
+
+    /**
+     * Ultima notificacion del cliente. Con el sistema de puntos tambien llegan
+     * avisos de cambio de rango, asi que no se puede asumir una posicion fija.
+     */
+    private Notificacion ultimaNotificacion(String clienteId) {
+        ListaEnlazada<Notificacion> lista = contexto.getNotificacionService()
+                .consultarNotificaciones(clienteId);
+        return lista.obtenerValorNodo(lista.getTamano() - 1);
+    }
+
+    /** No leidas del cliente, sin contar los avisos de cambio de rango. */
+    private int contarNoLeidasSinCambioDeRango(String clienteId) {
+        int cantidad = 0;
+        for (Notificacion n : contexto.getNotificacionService()
+                .consultarNotificaciones(clienteId)) {
+            if (!n.isLeida() && n.getTipo() != TipoNotificacion.CAMBIO_RANGO) {
+                cantidad++;
+            }
+        }
+        return cantidad;
     }
 }

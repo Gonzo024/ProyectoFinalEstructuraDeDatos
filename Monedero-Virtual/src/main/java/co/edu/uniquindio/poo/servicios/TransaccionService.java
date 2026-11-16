@@ -29,10 +29,17 @@ public class TransaccionService {
     private final RelojSimulado reloj;
     private final ListaEnlazada<TransaccionListener> listeners = new ListaEnlazada<TransaccionListener>();
     private int contadorTransacciones = 0;
+    /** Beneficios canjeados (Integrante 2). Si es null no se aplican descuentos extra. */
+    private ProveedorDescuentos proveedor;
 
     public TransaccionService(ClienteService clienteService, RelojSimulado reloj) {
         this.clienteService = clienteService;
         this.reloj = reloj;
+    }
+
+    /** Conecta los beneficios canjeados (lo hace ContextoMonedero). */
+    public void setProveedorDescuentos(ProveedorDescuentos proveedor) {
+        this.proveedor = proveedor;
     }
 
     /** Los otros servicios (puntos, notificaciones...) se inscriben aquí para enterarse de cada movimiento. */
@@ -62,7 +69,10 @@ public class TransaccionService {
     public Transaccion retirar(String monederoId, BigDecimal monto, String descripcion) {
         validarMonto(monto);
         Monedero origen = clienteService.obtenerMonedero(monederoId);
-        BigDecimal comision = Dinero.porcentaje(monto, Constantes.COMISION_RETIRO);
+        boolean sinCargo = proveedor != null && proveedor.retiroSinComision(origen.getClienteId());
+        BigDecimal comision = sinCargo
+                ? Dinero.CERO
+                : Dinero.porcentaje(monto, Constantes.COMISION_RETIRO);
 
         Transaccion t = Transaccion.builder(nuevoId(), TipoTransaccion.RETIRO, monto, reloj.ahora())
                 .comision(comision)
@@ -277,12 +287,18 @@ public class TransaccionService {
         }
     }
 
-    /** Comisión de transferencia = monto x 1.5 %, menos el descuento del rango del cliente. */
+    /** Comisión de transferencia = monto x 1.5 %, menos el descuento del rango y el del beneficio canjeado. */
     private BigDecimal calcularComisionTransferencia(String clienteId, BigDecimal monto) {
         Cliente cliente = clienteService.obtenerCliente(clienteId);
         BigDecimal comision = Dinero.porcentaje(monto, Constantes.COMISION_TRANSFERENCIA);
         BigDecimal descuento = Dinero.porcentaje(comision, cliente.getRango().getDescuentoComisionTransferencia());
-        return comision.subtract(descuento);
+        comision = comision.subtract(descuento);
+        // Descuento extra por beneficio canjeado (se aplica sobre lo que queda tras el del rango).
+        if (proveedor != null) {
+            BigDecimal extra = proveedor.descuentoComisionTransferencia(clienteId);
+            comision = comision.subtract(Dinero.porcentaje(comision, extra));
+        }
+        return comision;
     }
 
     /**
