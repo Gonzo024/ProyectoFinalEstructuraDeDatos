@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Modulo 2: puntos, rangos y canjes (Integrante 2).
+    Arriba se elige el cliente; las pestanas "Mis puntos" y "Canjes" muestran sus datos.
+    "Rangos y clasificacion" muestra a todos los clientes.
+    Los estilos estan en css/monedero.css.
+-->
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:id="raiz"
+      fx:controller="co.edu.uniquindio.poo.vista.ModuloDosController"
+      styleClass="raiz"
+      stylesheets="@../css/monedero.css">
+
+    <!-- ENCABEZADO -->
+
+    <VBox styleClass="encabezado" spacing="4">
+        <Label text="Monedero Virtual" styleClass="encabezado-titulo"/>
+        <Label text="Puntos · Rangos · Canjes" styleClass="encabezado-subtitulo"/>
+    </VBox>
+
+    <!-- CLIENTE (se comparte entre las pestanas) -->
+
+    <VBox>
+        <padding>
+            <Insets top="16" right="24" bottom="0" left="24"/>
+        </padding>
+
+        <HBox styleClass="tarjeta" alignment="CENTER_LEFT">
+            <Label text="Cliente" styleClass="titulo-seccion"/>
+            <ComboBox fx:id="comboCliente"
+                      promptText="Elige un cliente"
+                      maxWidth="Infinity" HBox.hgrow="ALWAYS"
+                      onAction="#actualizar"/>
+            <Button text="Actualizar"
+                    styleClass="boton-secundario"
+                    onAction="#refrescarTodo"/>
+        </HBox>
+    </VBox>
+
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+        <tabs>
+
+            <!-- ============================================ MIS PUNTOS -->
+
+            <Tab text="Mis puntos">
+                <VBox styleClass="contenido-pestana">
+
+                    <HBox spacing="14">
+                        <VBox styleClass="tarjeta" HBox.hgrow="ALWAYS">
+                            <Label text="Puntos disponibles" styleClass="etiqueta-valor"/>
+                            <Label fx:id="lblDisponibles" text="-" styleClass="valor-grande"/>
+                            <Label text="Los que puedes canjear" styleClass="texto-ayuda"/>
+                        </VBox>
+                        <VBox styleClass="tarjeta" HBox.hgrow="ALWAYS">
+                            <Label text="Puntos acumulados" styleClass="etiqueta-valor"/>
+                            <Label fx:id="lblAcumulados" text="-" styleClass="valor-grande"/>
+                            <Label text="Los que definen tu rango" styleClass="texto-ayuda"/>
+                        </VBox>
+                        <VBox styleClass="tarjeta" HBox.hgrow="ALWAYS">
+                            <Label text="Rango" styleClass="etiqueta-valor"/>
+                            <Label fx:id="lblRango" text="-" styleClass="valor-grande"/>
+                            <Label fx:id="lblSiguienteRango" styleClass="texto-ayuda"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+                        <Label text="Historial de puntos" styleClass="titulo-seccion"/>
+                        <TableView fx:id="tablaHistorial" minHeight="90" VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colFecha" text="Fecha"/>
+                                <TableColumn fx:id="colTipo" text="Movimiento"/>
+                                <TableColumn fx:id="colPuntos" text="Puntos"/>
+                                <TableColumn fx:id="colDescripcion" text="Descripcion"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+
+                </VBox>
+            </Tab>
+
+            <!-- ============================================ RANGOS Y CLASIFICACION -->
+
+            <Tab text="Rangos y clasificacion">
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta">
+                        <Label text="Rangos de clientes" styleClass="titulo-seccion"/>
+                        <Label text="El rango depende de los puntos acumulados. Los clientes de cada rango se cuentan con una busqueda por intervalo en el arbol AVL."
+                               styleClass="texto-ayuda" wrapText="true"/>
+                        <TableView fx:id="tablaRangos" prefHeight="165" minHeight="120">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colRangoNombre" text="Rango"/>
+                                <TableColumn fx:id="colRangoPuntos" text="Puntos acumulados"/>
+                                <TableColumn fx:id="colRangoBeneficios" text="Beneficios del rango"/>
+                                <TableColumn fx:id="colRangoClientes" text="Clientes"/>
+                            </columns>
+                        </TableView>
+                        <Label fx:id="lblArboles" styleClass="mensaje-estado" wrapText="true"/>
+                    </VBox>
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+                        <Label text="Clasificacion por puntos" styleClass="titulo-seccion"/>
+                        <Label text="De mayor a menor. Sale del recorrido inorden inverso del arbol binario de busqueda, sin ordenar nada."
+                               styleClass="texto-ayuda" wrapText="true"/>
+                        <TableView fx:id="tablaClasificacion" minHeight="90" VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colPuesto" text="Puesto"/>
+                                <TableColumn fx:id="colClasCliente" text="Cliente"/>
+                                <TableColumn fx:id="colClasAcumulados" text="Acumulados"/>
+                                <TableColumn fx:id="colClasDisponibles" text="Disponibles"/>
+                                <TableColumn fx:id="colClasRango" text="Rango"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+
+                </VBox>
+            </Tab>
+
+            <!-- ============================================ CANJES -->
+
+            <Tab text="Canjes">
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta">
+                        <Label text="Catalogo de beneficios" styleClass="titulo-seccion"/>
+                        <Label fx:id="lblPuntosCanje" styleClass="texto-ayuda"/>
+                        <TableView fx:id="tablaCatalogo" prefHeight="140" minHeight="110">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colBeneficio" text="Beneficio"/>
+                                <TableColumn fx:id="colCosto" text="Costo"/>
+                                <TableColumn fx:id="colVigencia" text="Vigencia"/>
+                                <TableColumn fx:id="colDetalle" text="Detalle"/>
+                                <TableColumn fx:id="colEstado" text="Estado"/>
+                            </columns>
+                        </TableView>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Monedero para el bono:" styleClass="etiqueta-valor"/>
+                            <ComboBox fx:id="comboMonederoBono"
+                                      promptText="Monedero"
+                                      prefWidth="240"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Canjear beneficio"
+                                    styleClass="boton-primario"
+                                    onAction="#canjear"/>
+                        </HBox>
+                        <Label fx:id="lblMensajeCanje" styleClass="mensaje-estado" wrapText="true"/>
+                    </VBox>
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+                        <Label text="Beneficios vigentes" styleClass="titulo-seccion"/>
+                        <TableView fx:id="tablaVigentes" minHeight="80" VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colVigenteBeneficio" text="Beneficio"/>
+                                <TableColumn fx:id="colVigenteDesde" text="Desde"/>
+                                <TableColumn fx:id="colVigenteHasta" text="Vence"/>
+                            </columns>
+                        </TableView>
+                    </VBox>
+
+                </VBox>
+            </Tab>
+
+        </tabs>
+    </TabPane>
+</VBox>

@@ -114,7 +114,7 @@
                 </VBox>
 
                 <!-- Modulo 2 -->
-                <VBox styleClass="tarjeta-modulo,deshabilitada"
+                <VBox styleClass="tarjeta-modulo"
                       HBox.hgrow="ALWAYS"
                       prefWidth="0" maxWidth="Infinity"
                       minHeight="270">
@@ -134,10 +134,10 @@
 
                     <Region VBox.vgrow="ALWAYS"/>
 
-                    <Button text="Proximamente"
-                            styleClass="boton-secundario"
+                    <Button text="Abrir  →"
+                            styleClass="boton-primario"
                             maxWidth="Infinity"
-                            disable="true"/>
+                            onAction="#abrirModuloDos"/>
                 </VBox>
 
                 <!-- Modulo 3 -->

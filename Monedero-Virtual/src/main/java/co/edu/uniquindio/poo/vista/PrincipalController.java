@@ -18,7 +18,7 @@ import javafx.scene.layout.Region;
  * Todo pasa en UNA sola ventana: al abrir un módulo se cambia el contenido de la ventana
  * por el del módulo, con una barra arriba que tiene el botón "Volver al inicio".
  * <p>
- * Cada módulo se carga una sola vez y se guarda (moduloUno, moduloTres). Así, si sales y
+ * Cada módulo se carga una sola vez y se guarda (moduloUno, moduloDos, moduloTres). Así, si sales y
  * vuelves a entrar, los clientes y operaciones que registraste siguen ahí.
  */
 public class PrincipalController {
@@ -27,6 +27,7 @@ public class PrincipalController {
     private BorderPane raizInicio;
 
     private Parent moduloUno;
+    private Parent moduloDos;
     private Parent moduloTres;
 
     /** La escena de la ventana. Se guarda porque, mientras se ve un módulo, raizInicio no está en ella. */
@@ -38,6 +39,14 @@ public class PrincipalController {
             moduloUno = cargarModulo("/fxml/ModuloUno.fxml", "Mi monedero");
         }
         mostrar(moduloUno);
+    }
+
+    @FXML
+    private void abrirModuloDos() {
+        if (moduloDos == null) {
+            moduloDos = cargarModulo("/fxml/ModuloDos.fxml", "Puntos y rangos");
+        }
+        mostrar(moduloDos);
     }
 
     @FXML
