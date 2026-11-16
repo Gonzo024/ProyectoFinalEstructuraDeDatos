@@ -91,8 +91,6 @@ public class PuntosService implements TransaccionListener {
         t.setPuntosGenerados(puntos);
         reubicar(clienteId, anterior, registro.getClave());  // 2. clave nueva
 
-        notificacionService.crearNotificacion(clienteId, TipoNotificacion.PUNTOS,
-                "Ganaste " + puntos + " puntos por " + t.getTipo().getNombre());
     }
 
     /**
@@ -126,8 +124,6 @@ public class PuntosService implements TransaccionListener {
         registro.descontarPorReversion(puntos, t.getId(), reloj.ahora());
         reubicar(clienteId, anterior, registro.getClave());
 
-        notificacionService.crearNotificacion(clienteId, TipoNotificacion.PUNTOS,
-                "Se descontaron " + puntos + " puntos por la reversion de " + t.getId());
     }
 
     // =========================================================== canje
