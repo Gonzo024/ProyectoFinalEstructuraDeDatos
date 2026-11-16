@@ -1,7 +1,9 @@
 
 package co.edu.uniquindio.poo.servicios;
 
+import co.edu.uniquindio.poo.estructuras.lista.ListaEnlazada;
 import co.edu.uniquindio.poo.modelo.Cliente;
+import co.edu.uniquindio.poo.modelo.Notificacion;
 import co.edu.uniquindio.poo.modelo.Monedero;
 import co.edu.uniquindio.poo.modelo.TransaccionProgramada;
 import co.edu.uniquindio.poo.modelo.enums.TipoNotificacion;
@@ -132,10 +134,7 @@ public class ContextoMonederoTest {
 
         assertEquals(
                 TipoNotificacion.PROGRAMADA_EJECUTADA,
-                contexto.getNotificacionService()
-                        .consultarNotificaciones(cliente.getId())
-                        .obtenerValorNodo(1)
-                        .getTipo()
+                ultimaNotificacion(cliente.getId()).getTipo()
         );
 
         // No debe descontar el dinero nuevamente.
@@ -198,5 +197,15 @@ public class ContextoMonederoTest {
                 ahorros.getSaldo()
                         .compareTo(Dinero.de(20000))
         );
+    }
+
+    /**
+     * Ultima notificacion del cliente. Con el sistema de puntos tambien llegan
+     * avisos de cambio de rango, asi que no se puede asumir una posicion fija.
+     */
+    private Notificacion ultimaNotificacion(String clienteId) {
+        ListaEnlazada<Notificacion> lista = contexto.getNotificacionService()
+                .consultarNotificaciones(clienteId);
+        return lista.obtenerValorNodo(lista.getTamano() - 1);
     }
 }
