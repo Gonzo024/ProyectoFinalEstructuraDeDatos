@@ -31,4 +31,8 @@ public final class Constantes {
     public static final int HORAS_RECORDATORIO = 24;
     /** Máximo de monederos por cliente. */
     public static final int MAX_MONEDEROS = 5;
+
+    /** Usuario y contraseña del administrador (inicio de sesión). */
+    public static final String ADMIN_USUARIO = "admin";
+    public static final String ADMIN_CLAVE = "admin123";
 }

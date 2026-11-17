@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<!--
+    Pantalla de inicio de sesion.
+    Izquierda: panel de marca (igual que la pantalla de inicio). Derecha: entrar o crear cuenta.
+    Los estilos estan en css/monedero.css.
+-->
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="co.edu.uniquindio.poo.vista.LoginController"
+            styleClass="raiz"
+            stylesheets="@../css/monedero.css">
+
+    <!-- ============================================ PANEL DE MARCA -->
+
+    <left>
+        <VBox styleClass="panel-marca"
+              prefWidth="330" minWidth="300">
+
+            <Label text="MV" styleClass="logo"/>
+
+            <Label text="Monedero Virtual"
+                   styleClass="marca-titulo"/>
+
+            <Label text="Tu dinero seguro, ordenado y siempre a la mano."
+                   styleClass="marca-texto"
+                   wrapText="true"/>
+
+            <Region styleClass="marca-separador"/>
+
+            <Label text="Usuarios de prueba"
+                   styleClass="marca-item"/>
+
+            <Label text="Administrador: admin / admin123"
+                   styleClass="marca-texto"
+                   wrapText="true"/>
+
+            <Label text="Clientes (PIN 1234): ana@demo.com, beto@demo.com, carla@demo.com, david@demo.com"
+                   styleClass="marca-texto"
+                   wrapText="true"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Label text="Proyecto final · Estructuras de Datos"
+                   styleClass="marca-pie"/>
+
+            <Label text="Universidad del Quindio"
+                   styleClass="marca-pie"/>
+
+        </VBox>
+    </left>
+
+    <!-- ============================================ ENTRAR / CREAR CUENTA -->
+
+    <center>
+        <VBox styleClass="panel-inicio">
+
+            <Label text="BIENVENIDO"
+                   styleClass="inicio-etiqueta"/>
+
+            <Label text="Inicia sesion"
+                   styleClass="inicio-titulo"/>
+
+            <Label text="El administrador ve a todos los clientes. Un cliente solo ve y usa sus propios monederos."
+                   styleClass="inicio-texto"
+                   wrapText="true"/>
+
+            <Region minHeight="18"/>
+
+            <HBox spacing="18">
+
+                <!-- Iniciar sesion -->
+                <VBox styleClass="tarjeta"
+                      HBox.hgrow="ALWAYS"
+                      prefWidth="0" maxWidth="Infinity">
+
+                    <Label text="Entrar"
+                           styleClass="titulo-seccion"/>
+
+                    <Label text="Administrador: usuario y contrasena. Cliente: correo y PIN."
+                           styleClass="texto-ayuda"
+                           wrapText="true"/>
+
+                    <TextField fx:id="txtUsuario"
+                               promptText="Usuario o correo"
+                               onAction="#iniciarSesion"/>
+
+                    <PasswordField fx:id="txtClave"
+                                   promptText="Contrasena o PIN"
+                                   onAction="#iniciarSesion"/>
+
+                    <Button text="Iniciar sesion"
+                            styleClass="boton-primario"
+                            maxWidth="Infinity"
+                            onAction="#iniciarSesion"/>
+
+                    <Label fx:id="lblMensajeLogin"
+                           styleClass="mensaje-error"
+                           wrapText="true"/>
+
+                </VBox>
+
+                <!-- Crear cuenta -->
+                <VBox styleClass="tarjeta"
+                      HBox.hgrow="ALWAYS"
+                      prefWidth="0" maxWidth="Infinity">
+
+                    <Label text="Crear cuenta"
+                           styleClass="titulo-seccion"/>
+
+                    <Label text="Se crea tu monedero Principal y entras de una vez."
+                           styleClass="texto-ayuda"
+                           wrapText="true"/>
+
+                    <TextField fx:id="txtNombreNuevo"
+                               promptText="Nombre completo"/>
+
+                    <TextField fx:id="txtCorreoNuevo"
+                               promptText="Correo electronico"/>
+
+                    <PasswordField fx:id="txtPinNuevo"
+                                   promptText="PIN"/>
+
+                    <Button text="Crear cuenta"
+                            styleClass="boton-secundario"
+                            maxWidth="Infinity"
+                            onAction="#crearCuenta"/>
+
+                    <Label fx:id="lblMensajeRegistro"
+                           styleClass="mensaje-error"
+                           wrapText="true"/>
+
+                </VBox>
+
+            </HBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Label text="Monedero Virtual · version 1.0"
+                   styleClass="inicio-pie"/>
+
+        </VBox>
+    </center>
+
+</BorderPane>

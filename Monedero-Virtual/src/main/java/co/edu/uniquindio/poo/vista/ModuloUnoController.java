@@ -13,23 +13,29 @@ import co.edu.uniquindio.poo.servicios.ContextoMonedero;
 import co.edu.uniquindio.poo.servicios.ContextoSesion;
 import co.edu.uniquindio.poo.servicios.MultimonederoService;
 import co.edu.uniquindio.poo.servicios.TransaccionService;
+import co.edu.uniquindio.poo.servicios.Sesion;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.Node;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 
-public class ModuloUnoController {
+public class ModuloUnoController implements PantallaConSesion {
 
     // ==================================================
     // NOMBRES DE LAS OPERACIONES
@@ -230,6 +236,7 @@ public class ModuloUnoController {
         configurarTablaMonederos();
         configurarTablaHistorial();
         configurarTablaAristas();
+        configurarTablaClientes();
     }
 
     // ==================================================
@@ -698,6 +705,336 @@ public class ModuloUnoController {
     }
 
     // ==================================================
+    // ADMINISTRAR CLIENTES (solo administrador)
+    // ==================================================
+
+    @FXML
+    private TabPane tabsModulo;
+
+    @FXML
+    private Tab tabAdministrarClientes;
+
+    @FXML
+    private TableView<Cliente> tablaClientes;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteId;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteNombre;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteCorreo;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteRango;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteSaldo;
+
+    @FXML
+    private TableColumn<Cliente, String> colClienteEstado;
+
+    @FXML
+    private TextField txtEditarNombre;
+
+    @FXML
+    private TextField txtEditarCorreo;
+
+    @FXML
+    private PasswordField txtEditarPin;
+
+    @FXML
+    private Button btnCambiarEstado;
+
+    @FXML
+    private Label lblMensajeAdmin;
+
+    private void configurarTablaClientes() {
+
+        colClienteId.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(datos.getValue().getId()));
+
+        colClienteNombre.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(datos.getValue().getNombre()));
+
+        colClienteCorreo.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(datos.getValue().getCorreo()));
+
+        colClienteRango.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(datos.getValue().getRango().getNombre()));
+
+        colClienteSaldo.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper("$" + clienteService.saldoTotal(
+                        datos.getValue().getId())));
+
+        colClienteEstado.setCellValueFactory(datos ->
+                new ReadOnlyStringWrapper(datos.getValue().isActivo()
+                        ? "Activa" : "Desactivada"));
+
+        tablaClientes.getSelectionModel().selectedItemProperty().addListener(
+                (observable, anterior, seleccionado) ->
+                        mostrarClienteSeleccionado(seleccionado));
+
+        // Al entrar a la pestana se recargan los clientes (pueden haberse
+        // registrado nuevos desde el login o desde la pestana Clientes).
+        tabAdministrarClientes.setOnSelectionChanged(evento -> {
+            if (tabAdministrarClientes.isSelected()) {
+                cargarTablaClientes();
+            }
+        });
+    }
+
+    private void cargarTablaClientes() {
+
+        Cliente seleccionado =
+                tablaClientes.getSelectionModel().getSelectedItem();
+
+        ObservableList<Cliente> filas =
+                FXCollections.observableArrayList();
+
+        for (Cliente cliente : clienteService.listarClientes()) {
+            filas.add(cliente);
+        }
+
+        tablaClientes.setItems(filas);
+        tablaClientes.refresh();
+
+        if (seleccionado != null) {
+            tablaClientes.getSelectionModel().select(seleccionado);
+        }
+    }
+
+    private void mostrarClienteSeleccionado(Cliente cliente) {
+
+        txtEditarPin.clear();
+
+        if (cliente == null) {
+            txtEditarNombre.clear();
+            txtEditarCorreo.clear();
+            btnCambiarEstado.setText("Desactivar cuenta");
+            return;
+        }
+
+        txtEditarNombre.setText(cliente.getNombre());
+        txtEditarCorreo.setText(cliente.getCorreo());
+        btnCambiarEstado.setText(cliente.isActivo()
+                ? "Desactivar cuenta" : "Reactivar cuenta");
+    }
+
+    @FXML
+    private void actualizarCliente() {
+
+        Cliente cliente =
+                tablaClientes.getSelectionModel().getSelectedItem();
+
+        if (cliente == null) {
+            mostrarMensajeAdmin("Selecciona un cliente de la tabla", false);
+            return;
+        }
+
+        try {
+            clienteService.actualizarCliente(
+                    cliente.getId(),
+                    txtEditarNombre.getText(),
+                    txtEditarCorreo.getText(),
+                    txtEditarPin.getText()
+            );
+
+            cargarTablaClientes();
+            mostrarClienteSeleccionado(cliente);
+            mostrarMensajeAdmin("Se actualizaron los datos de "
+                    + cliente.getNombre(), true);
+
+        } catch (RuntimeException error) {
+            mostrarMensajeAdmin(error.getMessage(), false);
+        }
+    }
+
+    @FXML
+    private void cambiarEstadoCliente() {
+
+        Cliente cliente =
+                tablaClientes.getSelectionModel().getSelectedItem();
+
+        if (cliente == null) {
+            mostrarMensajeAdmin("Selecciona un cliente de la tabla", false);
+            return;
+        }
+
+        try {
+            if (cliente.isActivo()) {
+
+                Alert confirmacion = new Alert(
+                        Alert.AlertType.CONFIRMATION,
+                        "La cuenta de " + cliente.getNombre()
+                                + " quedara desactivada: no podra iniciar sesion"
+                                + " ni hacer operaciones. Su historial se conserva"
+                                + " y la puedes reactivar despues.",
+                        ButtonType.OK, ButtonType.CANCEL);
+                confirmacion.setTitle("Desactivar cuenta");
+                confirmacion.setHeaderText("Desactivar a " + cliente.getNombre() + "?");
+
+                if (confirmacion.showAndWait().orElse(ButtonType.CANCEL)
+                        != ButtonType.OK) {
+                    return;
+                }
+
+                clienteService.desactivarCliente(cliente.getId());
+                mostrarMensajeAdmin("Se desactivo la cuenta de "
+                        + cliente.getNombre(), true);
+
+            } else {
+
+                clienteService.reactivarCliente(cliente.getId());
+                mostrarMensajeAdmin("Se reactivo la cuenta de "
+                        + cliente.getNombre(), true);
+            }
+
+            cargarTablaClientes();
+            mostrarClienteSeleccionado(cliente);
+
+        } catch (RuntimeException error) {
+            mostrarMensajeAdmin(error.getMessage(), false);
+        }
+    }
+
+    /** Lleva a la pestana Clientes con los monederos del cliente seleccionado. */
+    @FXML
+    private void verMonederosDelSeleccionado() {
+
+        Cliente cliente =
+                tablaClientes.getSelectionModel().getSelectedItem();
+
+        if (cliente == null) {
+            mostrarMensajeAdmin("Selecciona un cliente de la tabla", false);
+            return;
+        }
+
+        txtClienteMonederos.setText(cliente.getId());
+        consultarMonederos();
+        tabsModulo.getSelectionModel().selectFirst();
+    }
+
+    private void mostrarMensajeAdmin(String texto, boolean exito) {
+
+        lblMensajeAdmin.getStyleClass().removeAll("mensaje-exito", "mensaje-error");
+        lblMensajeAdmin.getStyleClass().add(exito ? "mensaje-exito" : "mensaje-error");
+        lblMensajeAdmin.setText(texto == null || texto.isBlank()
+                ? "No fue posible completar la operacion" : texto);
+    }
+
+    // ==================================================
+    // SESION (administrador o cliente)
+    // ==================================================
+
+    /** Quien estaba conectado la ultima vez que se preparo la pantalla. */
+    private String sesionAplicada = "";
+
+    /**
+     * Ajusta la pantalla a quien inicio sesion. La llama PrincipalController cada vez
+     * que se abre el modulo.
+     * - Administrador: la pantalla funciona como siempre.
+     * - Cliente: se oculta "Registrar cliente", su ID queda fijo y solo puede operar
+     *   con sus propios monederos.
+     */
+    @Override
+    public void aplicarSesion() {
+
+        boolean esCliente = Sesion.esCliente();
+
+        // Si sigue la misma persona, solo se actualizan sus datos.
+        if (Sesion.identificador().equals(sesionAplicada)) {
+            if (esCliente) {
+                consultarMonederos();
+            } else {
+                cargarTablaClientes();
+            }
+            return;
+        }
+        sesionAplicada = Sesion.identificador();
+
+        // Cambio de persona: no debe quedar nada de la anterior en pantalla.
+        limpiarPantalla();
+
+        Node tarjetaRegistro = txtNombre.getParent();
+        tarjetaRegistro.setVisible(!esCliente);
+        tarjetaRegistro.setManaged(!esCliente);
+
+        txtClienteMonederos.setDisable(esCliente);
+        txtClienteMultimonedero.setDisable(esCliente);
+
+        // La pestana "Administrar clientes" solo existe para el administrador.
+        if (esCliente) {
+            tabsModulo.getTabs().remove(tabAdministrarClientes);
+        } else {
+            if (!tabsModulo.getTabs().contains(tabAdministrarClientes)) {
+                tabsModulo.getTabs().add(tabAdministrarClientes);
+            }
+            cargarTablaClientes();
+        }
+        tabsModulo.getSelectionModel().selectFirst();
+
+        if (esCliente) {
+            String clienteId = Sesion.getCliente().getId();
+            String principal = clienteService.monederosDe(clienteId)
+                    .obtenerValorNodo(0).getId();
+
+            txtClienteMonederos.setText(clienteId);
+            txtClienteMultimonedero.setText(clienteId);
+            txtMonederoOrigen.setText(principal);
+            txtMonederoHistorial.setText(principal);
+
+            consultarMonederos();
+            consultarHistorial();
+            consultarMultimonedero();
+        }
+    }
+
+    private void limpiarPantalla() {
+
+        txtNombre.clear();
+        txtCorreo.clear();
+        txtPin.clear();
+        txtClienteMonederos.clear();
+        txtNombreMonedero.clear();
+        txtMonederoOrigen.clear();
+        txtMonederoDestino.clear();
+        txtMonto.clear();
+        txtDescripcion.clear();
+        txtMonederoHistorial.clear();
+        txtClienteMultimonedero.clear();
+
+        tablaMonederos.setItems(FXCollections.observableArrayList());
+        tablaHistorial.setItems(FXCollections.observableArrayList());
+        tablaAristas.setItems(FXCollections.observableArrayList());
+
+        lblSaldoTotal.setText("$0.00");
+        lblSaldoHistorial.setText("$0.00");
+        lblEstadoHistorial.setText("Sin consulta");
+        lblResultadoOperacion.setText("Aun no se ha realizado ninguna operacion.");
+
+        tablaClientes.getSelectionModel().clearSelection();
+        txtEditarNombre.clear();
+        txtEditarCorreo.clear();
+        txtEditarPin.clear();
+        lblMensajeAdmin.setText("");
+    }
+
+    /** Un cliente solo puede operar y consultar sus propios monederos. */
+    private void validarMonederoPropio(String monederoId) {
+
+        Monedero monedero = clienteService.obtenerMonedero(monederoId);
+
+        if (!monedero.getClienteId().equals(Sesion.getCliente().getId())) {
+            throw new IllegalArgumentException(
+                    "El monedero " + monederoId + " no es tuyo. "
+                            + "Usa uno de tus monederos (los ves en la pestana Clientes)."
+            );
+        }
+    }
+
+    // ==================================================
     // METODOS AUXILIARES
     // ==================================================
 
@@ -713,7 +1050,16 @@ public class ModuloUnoController {
             );
         }
 
-        return texto.trim().toUpperCase();
+        String valor = texto.trim().toUpperCase();
+
+        // Monedero de origen (operaciones) y monedero del historial:
+        // un cliente solo puede usar los suyos.
+        if (Sesion.esCliente()
+                && (campo == txtMonederoOrigen || campo == txtMonederoHistorial)) {
+            validarMonederoPropio(valor);
+        }
+
+        return valor;
     }
 
     private BigDecimal leerMonto() {

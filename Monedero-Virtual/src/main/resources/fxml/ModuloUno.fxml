@@ -23,7 +23,8 @@
                styleClass="encabezado-subtitulo"/>
     </VBox>
 
-    <TabPane tabClosingPolicy="UNAVAILABLE"
+    <TabPane fx:id="tabsModulo"
+             tabClosingPolicy="UNAVAILABLE"
              VBox.vgrow="ALWAYS">
 
         <tabs>
@@ -333,6 +334,79 @@
                                 <TableColumn fx:id="columnaVeces" text="Veces"/>
                             </columns>
                         </TableView>
+
+                    </VBox>
+
+                </VBox>
+
+            </Tab>
+
+            <!-- ============================================ ADMINISTRAR CLIENTES (solo administrador) -->
+
+            <Tab fx:id="tabAdministrarClientes" text="Administrar clientes">
+
+                <VBox styleClass="contenido-pestana">
+
+                    <VBox styleClass="tarjeta" VBox.vgrow="ALWAYS">
+
+                        <Label text="Clientes registrados"
+                               styleClass="titulo-seccion"/>
+
+                        <Label text="Solo el administrador ve esta pestana. Selecciona un cliente para actualizar sus datos o desactivar su cuenta."
+                               styleClass="texto-ayuda"
+                               wrapText="true"/>
+
+                        <TableView fx:id="tablaClientes"
+                                   minHeight="120"
+                                   VBox.vgrow="ALWAYS">
+                            <columnResizePolicy>
+                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                            </columnResizePolicy>
+                            <columns>
+                                <TableColumn fx:id="colClienteId" text="ID"/>
+                                <TableColumn fx:id="colClienteNombre" text="Nombre"/>
+                                <TableColumn fx:id="colClienteCorreo" text="Correo"/>
+                                <TableColumn fx:id="colClienteRango" text="Rango"/>
+                                <TableColumn fx:id="colClienteSaldo" text="Saldo total"/>
+                                <TableColumn fx:id="colClienteEstado" text="Cuenta"/>
+                            </columns>
+                        </TableView>
+
+                    </VBox>
+
+                    <VBox styleClass="tarjeta">
+
+                        <Label text="Cliente seleccionado"
+                               styleClass="titulo-seccion"/>
+
+                        <HBox spacing="10">
+                            <TextField fx:id="txtEditarNombre"
+                                       promptText="Nombre"
+                                       HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="txtEditarCorreo"
+                                       promptText="Correo"
+                                       HBox.hgrow="ALWAYS"/>
+                            <PasswordField fx:id="txtEditarPin"
+                                           promptText="Nuevo PIN (vacio = no cambia)"
+                                           HBox.hgrow="ALWAYS"/>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <Button text="Actualizar datos"
+                                    styleClass="boton-primario"
+                                    onAction="#actualizarCliente"/>
+                            <Button fx:id="btnCambiarEstado"
+                                    text="Desactivar cuenta"
+                                    styleClass="boton-peligro"
+                                    onAction="#cambiarEstadoCliente"/>
+                            <Button text="Ver sus monederos"
+                                    styleClass="boton-secundario"
+                                    onAction="#verMonederosDelSeleccionado"/>
+                        </HBox>
+
+                        <Label fx:id="lblMensajeAdmin"
+                               styleClass="mensaje-estado"
+                               wrapText="true"/>
 
                     </VBox>
 
