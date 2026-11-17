@@ -14,7 +14,7 @@ package co.edu.uniquindio.poo.servicios;
 public final class ContextoSesion {
 
     private static final ContextoMonedero CONTEXTO =
-            new ContextoMonedero();
+            crearContexto();
 
     private ContextoSesion() {
         // Evita crear objetos de esta clase.
@@ -22,5 +22,19 @@ public final class ContextoSesion {
 
     public static ContextoMonedero obtener() {
         return CONTEXTO;
+    }
+
+    // Crea el contexto de la aplicacion y le carga los datos de demostracion
+    // para la sustentacion. Las pruebas no usan esta clase, asi que no se afectan.
+    private static ContextoMonedero crearContexto() {
+        ContextoMonedero contexto = new ContextoMonedero();
+        try {
+            DatosDemostracion.cargar(contexto);
+        } catch (RuntimeException e) {
+            // Si algo falla, la aplicacion abre igual (sin datos o con parte de ellos).
+            System.err.println("No se pudieron cargar los datos de demostracion: "
+                    + e.getMessage());
+        }
+        return contexto;
     }
 }
