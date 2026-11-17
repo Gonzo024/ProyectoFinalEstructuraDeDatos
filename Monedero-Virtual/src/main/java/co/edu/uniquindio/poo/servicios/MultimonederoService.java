@@ -1,3 +1,4 @@
+
 package co.edu.uniquindio.poo.servicios;
 
 import co.edu.uniquindio.poo.estructuras.grafo.Arista;
@@ -9,75 +10,142 @@ import co.edu.uniquindio.poo.modelo.enums.TipoTransaccion;
 
 import java.math.BigDecimal;
 
-/**
- * Multimonedero epresenta con un GRAFO DIRIGIDO cómo se mueve el dinero
- * entre los monederos de un mismo cliente.
- * <p>
- * - Vértices: ids de monederos ("M1", "M2"...).
- * - Flecha M1 -> M2: dinero que salió de M1 hacia M2, con el total acumulado (peso).
- * <p>
- * Es un TransaccionListener: se inscribe en TransaccionService y el grafo se llena solo
- * cada vez que hay una transferencia entre monederos propios (y se descuenta si se revierte).
- */
 public class MultimonederoService implements TransaccionListener {
 
     private final ClienteService clienteService;
+
+    // Grafo original: movimientos entre monederos propios.
     private final GrafoDirigido grafo = new GrafoDirigido();
+
+    // Nuevo grafo: transferencias entre clientes distintos.
+    private final GrafoDirigido grafoClientes = new GrafoDirigido();
 
     public MultimonederoService(ClienteService clienteService) {
         this.clienteService = clienteService;
     }
 
-    // ============reacciones (listener)
-
     @Override
     public void onTransaccionCompletada(Transaccion t) {
+
         if (t.getTipo() == TipoTransaccion.TRANSFERENCIA_INTERNA) {
-            grafo.agregarArista(t.getMonederoOrigenId(), t.getMonederoDestinoId(), t.getMonto());
+            grafo.agregarArista(
+                    t.getMonederoOrigenId(),
+                    t.getMonederoDestinoId(),
+                    t.getMonto()
+            );
+        }
+
+        if (t.getTipo() == TipoTransaccion.TRANSFERENCIA) {
+            grafoClientes.agregarArista(
+                    t.getClienteOrigenId(),
+                    t.getClienteDestinoId(),
+                    t.getMonto()
+            );
         }
     }
 
     @Override
     public void onTransaccionRevertida(Transaccion t) {
+
         if (t.getTipo() == TipoTransaccion.TRANSFERENCIA_INTERNA) {
-            grafo.restarArista(t.getMonederoOrigenId(), t.getMonederoDestinoId(), t.getMonto());
+            grafo.restarArista(
+                    t.getMonederoOrigenId(),
+                    t.getMonederoDestinoId(),
+                    t.getMonto()
+            );
+        }
+
+        if (t.getTipo() == TipoTransaccion.TRANSFERENCIA) {
+            grafoClientes.restarArista(
+                    t.getClienteOrigenId(),
+                    t.getClienteDestinoId(),
+                    t.getMonto()
+            );
         }
     }
 
-    // =======consultas
+    // ==========================================
+    // CONSULTAS ORIGINALES ENTRE MONEDEROS
+    // ==========================================
 
-    /** Todas las flechas entre los monederos de un cliente (para mostrar en la interfaz). */
     public ListaEnlazada<Arista> movimientosDelCliente(String clienteId) {
         ListaEnlazada<Arista> resultado = new ListaEnlazada<>();
+
         for (Monedero monedero : clienteService.monederosDe(clienteId)) {
             for (Arista arista : grafo.aristasDesde(monedero.getId())) {
                 resultado.agregarFinal(arista);
             }
         }
+
         return resultado;
     }
 
-    /** Total que ha pasado de un monedero a otro. */
-    public BigDecimal totalMovido(String monederoOrigenId, String monederoDestinoId) {
-        return grafo.pesoEntre(monederoOrigenId, monederoDestinoId);
+    public BigDecimal totalMovido(
+            String monederoOrigenId,
+            String monederoDestinoId) {
+
+        return grafo.pesoEntre(
+                monederoOrigenId,
+                monederoDestinoId
+        );
     }
 
-    /** Cuánto ha enviado un monedero a los demás monederos del cliente. */
     public BigDecimal totalEnviado(String monederoId) {
         return grafo.totalSaliente(monederoId);
     }
 
-    /** Cuánto ha recibido un monedero de los demás monederos del cliente. */
     public BigDecimal totalRecibido(String monederoId) {
         return grafo.totalEntrante(monederoId);
     }
 
-    /** Monederos a los que ha llegado dinero desde este, directa o indirectamente (DFS recursivo). */
     public ListaEnlazada<String> destinosAlcanzables(String monederoId) {
         return grafo.alcanzablesDesde(monederoId);
     }
 
     public GrafoDirigido getGrafo() {
         return grafo;
+    }
+
+    // ==========================================
+    // NUEVAS CONSULTAS ENTRE CLIENTES
+    // ==========================================
+
+    // Transferencias enviadas por un cliente.
+    public ListaEnlazada<Arista> transferenciasEntreClientes(
+            String clienteId) {
+
+        return grafoClientes.aristasDesde(clienteId);
+    }
+
+    // Dinero transferido de un cliente a otro.
+    public BigDecimal totalTransferidoEntreClientes(
+            String clienteOrigenId,
+            String clienteDestinoId) {
+
+        return grafoClientes.pesoEntre(
+                clienteOrigenId,
+                clienteDestinoId
+        );
+    }
+
+    // Total enviado a otros clientes.
+    public BigDecimal totalEnviadoAClientes(String clienteId) {
+        return grafoClientes.totalSaliente(clienteId);
+    }
+
+    // Total recibido desde otros clientes.
+    public BigDecimal totalRecibidoDeClientes(String clienteId) {
+        return grafoClientes.totalEntrante(clienteId);
+    }
+
+    // Clientes alcanzables mediante transferencias.
+    public ListaEnlazada<String> clientesAlcanzables(
+            String clienteId) {
+
+        return grafoClientes.alcanzablesDesde(clienteId);
+    }
+
+    public GrafoDirigido getGrafoClientes() {
+        return grafoClientes;
     }
 }
