@@ -1,17 +1,19 @@
 package co.edu.uniquindio.poo;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
-    public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
+import co.edu.uniquindio.poo.vista.PrincipalApp;
+import javafx.application.Application;
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-        }
+/**
+ * Lanzador de la aplicacion.
+ * <p>
+ * La aplicacion es PrincipalApp. Esta clase existe porque, si se ejecuta directamente
+ * una clase que extiende Application, Java exige que JavaFX este en el module path y
+ * muestra "JavaFX runtime components are missing". Como Main NO extiende Application,
+ * esa revision no se hace y se puede ejecutar con el boton Run de IntelliJ.
+ */
+public class Main {
+
+    public static void main(String[] args) {
+        Application.launch(PrincipalApp.class, args);
     }
 }
