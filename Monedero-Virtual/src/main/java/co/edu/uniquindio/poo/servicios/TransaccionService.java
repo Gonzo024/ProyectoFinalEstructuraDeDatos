@@ -52,7 +52,7 @@ public class TransaccionService {
     /** Depósito: entra dinero al monedero. No tiene comisión. */
     public Transaccion depositar(String monederoId, BigDecimal monto, String descripcion) {
         validarMonto(monto);
-        Monedero destino = clienteService.obtenerMonedero(monederoId);
+        Monedero destino = monederoActivo(monederoId);
 
         Transaccion t = Transaccion.builder(nuevoId(), TipoTransaccion.DEPOSITO, monto, reloj.ahora())
                 .origen(destino.getClienteId(), null)
@@ -68,7 +68,7 @@ public class TransaccionService {
     /** Retiro: sale dinero del monedero más una comisión del 1 %. */
     public Transaccion retirar(String monederoId, BigDecimal monto, String descripcion) {
         validarMonto(monto);
-        Monedero origen = clienteService.obtenerMonedero(monederoId);
+        Monedero origen = monederoActivo(monederoId);
         boolean sinCargo = proveedor != null && proveedor.retiroSinComision(origen.getClienteId());
         BigDecimal comision = sinCargo
                 ? Dinero.CERO
@@ -91,7 +91,7 @@ public class TransaccionService {
         if (categoria == null) {
             throw new TransaccionInvalidaException("El pago debe tener una categoria");
         }
-        Monedero origen = clienteService.obtenerMonedero(monederoId);
+        Monedero origen = monederoActivo(monederoId);
 
         Transaccion t = Transaccion.builder(nuevoId(), TipoTransaccion.PAGO, monto, reloj.ahora())
                 .origen(origen.getClienteId(), origen.getId())
@@ -111,8 +111,8 @@ public class TransaccionService {
     public Transaccion transferir(String monederoOrigenId, String monederoDestinoId,
                                   BigDecimal monto, String descripcion) {
         validarMonto(monto);
-        Monedero origen = clienteService.obtenerMonedero(monederoOrigenId);
-        Monedero destino = clienteService.obtenerMonedero(monederoDestinoId);
+        Monedero origen = monederoActivo(monederoOrigenId);
+        Monedero destino = monederoActivo(monederoDestinoId);
         if (origen.getClienteId().equals(destino.getClienteId())) {
             throw new TransaccionInvalidaException(
                     "Para mover dinero entre tus propios monederos usa transferirEntreMisMonederos");
@@ -136,8 +136,8 @@ public class TransaccionService {
     public Transaccion transferirEntreMisMonederos(String monederoOrigenId, String monederoDestinoId,
                                                    BigDecimal monto, String descripcion) {
         validarMonto(monto);
-        Monedero origen = clienteService.obtenerMonedero(monederoOrigenId);
-        Monedero destino = clienteService.obtenerMonedero(monederoDestinoId);
+        Monedero origen = monederoActivo(monederoOrigenId);
+        Monedero destino = monederoActivo(monederoDestinoId);
         if (!origen.getClienteId().equals(destino.getClienteId())) {
             throw new TransaccionInvalidaException("Los dos monederos deben ser del mismo cliente");
         }
@@ -163,7 +163,7 @@ public class TransaccionService {
      */
     public Transaccion acreditarBono(String monederoId, BigDecimal monto) {
         validarMonto(monto);
-        Monedero destino = clienteService.obtenerMonedero(monederoId);
+        Monedero destino = monederoActivo(monederoId);
 
         Transaccion t = Transaccion.builder(nuevoId(), TipoTransaccion.BONO, monto, reloj.ahora())
                 .origen(destino.getClienteId(), null)
@@ -271,6 +271,20 @@ public class TransaccionService {
     }
 
     // =========================================================== ayudas privadas
+
+    /**
+     * Busca el monedero y verifica que la cuenta de su dueno este activa.
+     * Lo usan todas las operaciones que mueven dinero (no las consultas ni la reversion).
+     */
+    private Monedero monederoActivo(String monederoId) {
+        Monedero monedero = clienteService.obtenerMonedero(monederoId);
+        Cliente dueno = clienteService.obtenerCliente(monedero.getClienteId());
+        if (!dueno.isActivo()) {
+            throw new TransaccionInvalidaException(
+                    "La cuenta de " + dueno.getNombre() + " esta desactivada");
+        }
+        return monedero;
+    }
 
     private String nuevoId() {
         contadorTransacciones++;

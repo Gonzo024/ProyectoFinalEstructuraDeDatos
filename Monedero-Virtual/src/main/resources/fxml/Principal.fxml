@@ -58,6 +58,18 @@
 
             <Region VBox.vgrow="ALWAYS"/>
 
+            <Label fx:id="lblSesion"
+                   text="Sesion:"
+                   styleClass="marca-item"
+                   wrapText="true"/>
+
+            <Button text="Cerrar sesion"
+                    styleClass="boton-secundario"
+                    maxWidth="Infinity"
+                    onAction="#cerrarSesion"/>
+
+            <Region minHeight="12"/>
+
             <Label text="Proyecto final · Estructuras de Datos"
                    styleClass="marca-pie"/>
 

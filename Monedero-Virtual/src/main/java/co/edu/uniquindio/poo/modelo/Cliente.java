@@ -9,9 +9,11 @@ public class Cliente {
     private final String id;
     private String nombre;
     private String correo;
-    private final String pin;
+    private String pin;
     private Rango rango;
     private final LocalDateTime fechaRegistro;
+    /** false si el administrador desactivo la cuenta: no puede entrar ni hacer operaciones. */
+    private boolean activo = true;
 
     public Cliente(String id, String nombre, String correo, String pin, LocalDateTime fechaRegistro) {
         this.id = id;
@@ -24,6 +26,18 @@ public class Cliente {
 
     public boolean pinCorrecto(String intento) {
         return pin.equals(intento);
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
+    }
+
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
     }
 
     public String getId() {

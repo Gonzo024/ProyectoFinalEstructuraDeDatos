@@ -36,7 +36,25 @@ En IntelliJ IDEA: panel **Maven** → `Monedero-Virtual` → `Plugins` → `java
 > La aplicación se debe abrir con `javafx:run`. Si se ejecuta `PrincipalApp` directamente con
 > el botón de Run, Java muestra el error "JavaFX runtime components are missing".
 
-Los datos se guardan en memoria: al cerrar la aplicación se borran.
+También se puede abrir con el botón **Run** de IntelliJ sobre la clase `Main`.
+
+Los datos se guardan en memoria: al cerrar la aplicación se borran. Al abrirla se cargan
+datos de demostración (cuatro clientes, uno en cada rango).
+
+## Inicio de sesión
+
+| Usuario | Contraseña | Qué puede hacer |
+|---|---|---|
+| `admin` | `admin123` | Ve y opera sobre todos los clientes, maneja el reloj y ejecuta las programaciones. En el módulo 1, pestaña **Administrar clientes**, actualiza los datos de los clientes y desactiva o reactiva sus cuentas. |
+| `ana@demo.com` (Platino) | `1234` | Solo ve y usa sus propios monederos, puntos, programaciones y notificaciones. |
+| `beto@demo.com` (Oro) | `1234` | Igual que Ana. |
+| `carla@demo.com` (Plata) | `1234` | Igual que Ana. |
+| `david@demo.com` (Bronce) | `1234` | Igual que Ana. |
+
+Desde la pantalla de inicio de sesión también se puede crear una cuenta nueva.
+
+Una cuenta desactivada no puede iniciar sesión ni hacer o recibir operaciones, y deja de aparecer
+en las listas de clientes. No se borra nada: su historial se conserva y se puede reactivar.
 
 ## Cómo ejecutar las pruebas
 

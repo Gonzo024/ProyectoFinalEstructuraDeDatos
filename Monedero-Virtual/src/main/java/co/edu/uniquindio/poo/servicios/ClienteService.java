@@ -83,6 +83,85 @@ public class ClienteService {
         return cliente;
     }
 
+    /**
+     * Busca un cliente por su correo (sin importar mayúsculas). O(1) en promedio:
+     * usa la misma tabla hash que evita correos repetidos al registrar.
+     * Devuelve null si no existe.
+     */
+    public Cliente obtenerClientePorCorreo(String correo) {
+        if (correo == null || correo.isBlank()) {
+            return null;
+        }
+        return clientesPorCorreo.obtener(correo.trim().toLowerCase());
+    }
+
+    /**
+     * Actualiza los datos de un cliente (lo usa el administrador).
+     * Si cambia el correo, se mueve en la tabla hash de correos: se elimina la clave
+     * vieja y se inserta la nueva, O(1) en promedio. El correo no puede repetirse
+     * porque es el usuario con el que el cliente inicia sesion.
+     *
+     * @param pinNuevo si viene vacio, el PIN no cambia
+     */
+    public Cliente actualizarCliente(String id, String nombre, String correo, String pinNuevo) {
+        Cliente cliente = obtenerCliente(id);
+        if (nombre == null || nombre.isBlank()) {
+            throw new MonederoException("El nombre es obligatorio");
+        }
+        if (correo == null || correo.isBlank()) {
+            throw new MonederoException("El correo es obligatorio");
+        }
+
+        String correoNuevo = correo.trim().toLowerCase();
+        String correoActual = cliente.getCorreo().trim().toLowerCase();
+        if (!correoNuevo.equals(correoActual)) {
+            if (clientesPorCorreo.contieneClave(correoNuevo)) {
+                throw new MonederoException("Ya existe un cliente con ese correo");
+            }
+            clientesPorCorreo.eliminar(correoActual);
+            clientesPorCorreo.insertar(correoNuevo, cliente);
+        }
+
+        cliente.setNombre(nombre.trim());
+        cliente.setCorreo(correo.trim());
+        if (pinNuevo != null && !pinNuevo.isBlank()) {
+            cliente.setPin(pinNuevo);
+        }
+        return cliente;
+    }
+
+    /**
+     * Desactiva la cuenta: el cliente ya no puede iniciar sesion ni hacer operaciones,
+     * y deja de aparecer en las listas de clientes. No se borra nada: su historial y
+     * las transferencias que hizo con otros clientes siguen siendo validos.
+     */
+    public void desactivarCliente(String id) {
+        Cliente cliente = obtenerCliente(id);
+        if (!cliente.isActivo()) {
+            throw new MonederoException("La cuenta de " + cliente.getNombre() + " ya esta desactivada");
+        }
+        cliente.setActivo(false);
+    }
+
+    public void reactivarCliente(String id) {
+        Cliente cliente = obtenerCliente(id);
+        if (cliente.isActivo()) {
+            throw new MonederoException("La cuenta de " + cliente.getNombre() + " ya esta activa");
+        }
+        cliente.setActivo(true);
+    }
+
+    /** Clientes con la cuenta activa, en el orden en que se registraron. O(n). */
+    public ListaEnlazada<Cliente> listarClientesActivos() {
+        ListaEnlazada<Cliente> activos = new ListaEnlazada<Cliente>();
+        for (Cliente cliente : clientes) {
+            if (cliente.isActivo()) {
+                activos.agregarFinal(cliente);
+            }
+        }
+        return activos;
+    }
+
     /** Todos los clientes en el orden en que se registraron. */
     public ListaEnlazada<Cliente> listarClientes() {
         return clientes;
@@ -92,7 +171,9 @@ public class ClienteService {
 
     /** Crea un monedero para el cliente. O(1) en promedio (solo recorre sus máximo 5 monederos). */
     public Monedero crearMonedero(String clienteId, String nombre, TipoMonedero tipo) {
-        obtenerCliente(clienteId);
+        if (!obtenerCliente(clienteId).isActivo()) {
+            throw new MonederoException("La cuenta de este cliente esta desactivada");
+        }
         if (nombre == null || nombre.isBlank()) {
             throw new MonederoException("El nombre del monedero es obligatorio");
         }

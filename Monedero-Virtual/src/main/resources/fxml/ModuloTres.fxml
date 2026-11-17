@@ -100,7 +100,8 @@
                                     styleClass="boton-primario"
                                     onAction="#crearProgramacion"/>
 
-                            <Button text="Consultar siguiente"
+                            <Button fx:id="btnConsultarSiguiente"
+                                    text="Consultar siguiente"
                                     styleClass="boton-secundario"
                                     onAction="#consultarSiguienteProgramacion"/>
 
@@ -175,7 +176,8 @@
                                     styleClass="boton-primario"
                                     onAction="#consultarNotificaciones"/>
 
-                            <Button text="Crear aviso de prueba"
+                            <Button fx:id="btnAvisoPrueba"
+                                    text="Crear aviso de prueba"
                                     styleClass="boton-secundario"
                                     onAction="#crearNotificacionPrueba"/>
 
@@ -237,7 +239,8 @@
                                        promptText="ID del cliente"
                                        HBox.hgrow="ALWAYS"/>
 
-                            <Button text="Cargar datos de demostracion"
+                            <Button fx:id="btnDatosDemostracion"
+                                    text="Cargar datos de demostracion"
                                     styleClass="boton-secundario"
                                     onAction="#cargarDatosDemostracion"/>
 

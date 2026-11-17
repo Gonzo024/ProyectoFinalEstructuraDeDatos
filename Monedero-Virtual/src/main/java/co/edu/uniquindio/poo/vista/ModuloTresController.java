@@ -20,15 +20,18 @@ import co.edu.uniquindio.poo.servicios.ProgramacionService;
 import co.edu.uniquindio.poo.servicios.ProgramacionNotificacionService;
 import co.edu.uniquindio.poo.servicios.ReporteGastosClienteService;
 import co.edu.uniquindio.poo.servicios.TransaccionService;
+import co.edu.uniquindio.poo.servicios.Sesion;
 
 import co.edu.uniquindio.poo.util.Dinero;
 import co.edu.uniquindio.poo.util.RelojSimulado;
 
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.Node;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -39,7 +42,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-public class ModuloTresController {
+public class ModuloTresController implements PantallaConSesion {
 
     // ==================================================
     // SERVICIOS COMPARTIDOS CON EL MODULO UNO
@@ -82,6 +85,19 @@ public class ModuloTresController {
     private final ObservableList<TransaccionProgramada>
             programacionesVisibles =
             FXCollections.observableArrayList();
+
+    // Lo que muestra la tabla: todas las programaciones (administrador)
+    // o solo las del cliente que inicio sesion.
+    private final ObservableList<TransaccionProgramada>
+            programacionesDeLaTabla =
+            FXCollections.observableArrayList();
+
+    // Botones de ejecucion creados por codigo (solo para el administrador).
+    private Node[] controlesSimulacion = new Node[0];
+
+    @FXML private Button btnConsultarSiguiente;
+    @FXML private Button btnAvisoPrueba;
+    @FXML private Button btnDatosDemostracion;
 
     private boolean datosDemostracionCargados = false;
     private int contadorProgramaciones = 0;
@@ -248,7 +264,13 @@ public class ModuloTresController {
                 )
         );
 
-        tablaProgramaciones.setItems(programacionesVisibles);
+        tablaProgramaciones.setItems(programacionesDeLaTabla);
+
+        // Cada vez que cambia la lista completa, se vuelve a filtrar la tabla.
+        programacionesVisibles.addListener(
+                (ListChangeListener<TransaccionProgramada>) cambio ->
+                        refrescarTablaProgramaciones()
+        );
 
         tablaProgramaciones.setPlaceholder(
                 new Label("No hay programaciones registradas")
@@ -578,6 +600,10 @@ public class ModuloTresController {
         panel.getChildren().add(posicion++, botones);
         panel.getChildren().add(posicion, advertencia);
 
+        controlesSimulacion = new Node[]{
+                titulo, lblRelojSimulado, botones, advertencia
+        };
+
         actualizarRelojVisual();
     }
 
@@ -668,9 +694,13 @@ public class ModuloTresController {
 
     private void actualizarEstadoProgramaciones() {
 
+        // Un cliente solo ve cuantas tiene el; el administrador, todas.
+        int pendientes = Sesion.esCliente()
+                ? programacionesDeLaTabla.size()
+                : programacionService.cantidadPendientes();
+
         lblEstadoProgramaciones.setText(
-                "Programaciones pendientes: "
-                        + programacionService.cantidadPendientes()
+                "Programaciones pendientes: " + pendientes
         );
     }
 
@@ -1136,6 +1166,92 @@ public class ModuloTresController {
                     mensajeError(error)
             );
         }
+    }
+
+    // ==================================================
+    // SESION (administrador o cliente)
+    // ==================================================
+
+    /** Quien estaba conectado la ultima vez que se preparo la pantalla. */
+    private String sesionAplicada = "";
+
+    /**
+     * Ajusta el modulo a quien inicio sesion. Lo llama PrincipalController
+     * cada vez que se abre el modulo.
+     * - Administrador: todo funciona como siempre.
+     * - Cliente: su ID queda fijo en programaciones, notificaciones y gastos,
+     *   la tabla solo muestra sus programaciones y se ocultan los botones de
+     *   administracion (reloj, ejecucion, datos y avisos de prueba).
+     */
+    @Override
+    public void aplicarSesion() {
+
+        boolean esCliente = Sesion.esCliente();
+
+        if (Sesion.identificador().equals(sesionAplicada)) {
+            if (esCliente) {
+                consultarNotificaciones();
+            }
+            return;
+        }
+        sesionAplicada = Sesion.identificador();
+
+        String clienteId = esCliente ? Sesion.getCliente().getId() : "";
+
+        txtClienteProgramacion.setText(clienteId);
+        txtClienteNotificacion.setText(clienteId);
+        txtClienteGastos.setText(clienteId);
+
+        txtClienteProgramacion.setDisable(esCliente);
+        txtClienteNotificacion.setDisable(esCliente);
+        txtClienteGastos.setDisable(esCliente);
+
+        txtMonederoProgramacion.setText(esCliente
+                ? clienteService.monederosDe(clienteId).obtenerValorNodo(0).getId()
+                : "");
+        txtMontoProgramacion.clear();
+        txtClienteDestino.clear();
+        txtMonederoDestino.clear();
+
+        for (Node control : controlesSimulacion) {
+            mostrarSoloAlAdministrador(control, esCliente);
+        }
+        mostrarSoloAlAdministrador(btnConsultarSiguiente, esCliente);
+        mostrarSoloAlAdministrador(btnAvisoPrueba, esCliente);
+        mostrarSoloAlAdministrador(btnDatosDemostracion, esCliente);
+
+        refrescarTablaProgramaciones();
+
+        tablaNotificaciones.setItems(FXCollections.observableArrayList());
+        lblCantidadNoLeidas.setText("Notificaciones sin leer: 0");
+        limpiarReporte();
+
+        if (esCliente) {
+            consultarNotificaciones();
+        }
+    }
+
+    private void mostrarSoloAlAdministrador(Node control, boolean esCliente) {
+        control.setVisible(!esCliente);
+        control.setManaged(!esCliente);
+    }
+
+    /** Copia a la tabla las programaciones que puede ver quien inicio sesion. */
+    private void refrescarTablaProgramaciones() {
+
+        ObservableList<TransaccionProgramada> visibles =
+                FXCollections.observableArrayList();
+
+        for (TransaccionProgramada programacion : programacionesVisibles) {
+            if (!Sesion.esCliente()
+                    || programacion.getClienteOrigenId()
+                    .equals(Sesion.getCliente().getId())) {
+                visibles.add(programacion);
+            }
+        }
+
+        programacionesDeLaTabla.setAll(visibles);
+        actualizarEstadoProgramaciones();
     }
 
     // ==================================================

@@ -1,6 +1,5 @@
 package co.edu.uniquindio.poo.vista;
 
-import co.edu.uniquindio.poo.estructuras.lista.ListaEnlazada;
 import co.edu.uniquindio.poo.modelo.BeneficioActivo;
 import co.edu.uniquindio.poo.modelo.Cliente;
 import co.edu.uniquindio.poo.modelo.Monedero;
@@ -14,6 +13,7 @@ import co.edu.uniquindio.poo.servicios.ContextoMonedero;
 import co.edu.uniquindio.poo.servicios.ContextoSesion;
 import co.edu.uniquindio.poo.servicios.PuntosService;
 import co.edu.uniquindio.poo.servicios.RangoService;
+import co.edu.uniquindio.poo.servicios.Sesion;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -34,7 +34,7 @@ import java.time.format.DateTimeFormatter;
  * BeneficioService y muestra la respuesta. Las estructuras propias (ListaEnlazada)
  * se pasan a ObservableList solo aqui, en el borde de la interfaz.
  */
-public class ModuloDosController {
+public class ModuloDosController implements PantallaConSesion {
 
     private static final DateTimeFormatter FORMATO =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -128,9 +128,9 @@ public class ModuloDosController {
                 new ReadOnlyStringWrapper(intervalo(d.getValue())));
         colRangoBeneficios.setCellValueFactory(d ->
                 new ReadOnlyStringWrapper(d.getValue().descripcionBeneficios()));
-        // Busqueda por intervalo en el ArbolAVL: O(log n + k).
+        // Busqueda por intervalo en el ArbolAVL: O(log n + k). Solo cuentan las cuentas activas.
         colRangoClientes.setCellValueFactory(d ->
-                new ReadOnlyStringWrapper(String.valueOf(rangoService.contarClientes(d.getValue()))));
+                new ReadOnlyStringWrapper(String.valueOf(contarActivos(d.getValue()))));
         tablaRangos.setItems(FXCollections.observableArrayList(Rango.values()));
 
         colPuesto.setCellValueFactory(d ->
@@ -170,21 +170,57 @@ public class ModuloDosController {
                 new ReadOnlyStringWrapper(d.getValue().getFin().format(FORMATO)));
     }
 
+    // =========================================================== sesion
+
+    /** Quien estaba conectado la ultima vez que se preparo la pantalla. */
+    private String sesionAplicada = "";
+
+    /**
+     * Administrador: elige cualquier cliente de la lista.
+     * Cliente: la lista queda fija en el, asi solo ve y canjea sus propios puntos.
+     * La clasificacion sigue mostrando a todos porque es un ranking.
+     */
+    @Override
+    public void aplicarSesion() {
+        boolean esCliente = Sesion.esCliente();
+        comboCliente.setDisable(esCliente);
+
+        if (!Sesion.identificador().equals(sesionAplicada)) {
+            sesionAplicada = Sesion.identificador();
+            cargarClientes();
+            comboCliente.setValue(esCliente ? Sesion.getCliente() : null);
+        }
+        refrescarTodo();
+    }
+
     // =========================================================== cliente
 
-    /** Vuelve a leer los clientes solo si se registraron nuevos (los clientes nunca se borran). */
+    /**
+     * Vuelve a leer los clientes con cuenta activa, solo si la lista cambio
+     * (clientes nuevos, desactivados o reactivados).
+     */
     private void cargarClientes() {
-        ListaEnlazada<Cliente> registrados = clienteService.listarClientes();
-        if (registrados.getTamano() == comboCliente.getItems().size()) {
+        ObservableList<Cliente> clientes = FXCollections.observableArrayList();
+        for (Cliente cliente : clienteService.listarClientesActivos()) {
+            clientes.add(cliente);
+        }
+        if (clientes.equals(comboCliente.getItems())) {
             return;
         }
         Cliente seleccionado = comboCliente.getValue();
-        ObservableList<Cliente> clientes = FXCollections.observableArrayList();
-        for (Cliente cliente : registrados) {
-            clientes.add(cliente);
-        }
         comboCliente.setItems(clientes);
-        comboCliente.setValue(seleccionado);
+        comboCliente.setValue(clientes.contains(seleccionado) ? seleccionado : null);
+    }
+
+    /** Clientes activos de un rango (busqueda por intervalo en el AVL). */
+    private int contarActivos(Rango rango) {
+        int cantidad = 0;
+        for (String clienteId : rangoService.clientesDeRango(rango)) {
+            if (clienteService.obtenerCliente(clienteId).isActivo()) {
+                cantidad++;
+            }
+        }
+        return cantidad;
     }
 
     /** Boton "Actualizar" y cada vez que la pantalla vuelve a mostrarse. */
@@ -247,7 +283,10 @@ public class ModuloDosController {
         int totalClientes = clienteService.listarClientes().getTamano();
         ObservableList<RegistroPuntos> filas = FXCollections.observableArrayList();
         for (RegistroPuntos registro : puntosService.clasificacion(totalClientes)) {
-            filas.add(registro);
+            // Las cuentas desactivadas no aparecen en la clasificacion.
+            if (clienteService.obtenerCliente(registro.getClienteId()).isActivo()) {
+                filas.add(registro);
+            }
         }
         tablaClasificacion.setItems(filas);
         tablaClasificacion.refresh();
